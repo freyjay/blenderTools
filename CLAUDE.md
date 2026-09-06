@@ -1,6 +1,6 @@
 # blenderTools
 
-Clean, focused memory file for blenderTools - A new project.
+Clean, focused memory file for blenderTools -- calibrated AI modeling in Blender over MCP (text-based vision, measurement senses, part-graph, gauges).
 
 ## config/
 ### commands.md
