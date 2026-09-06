@@ -1,0 +1,10 @@
+# Cursor AI Rules for blenderTools
+
+## Project Context
+blenderTools - A new project
+
+## Coding Standards
+- Keep code clean and simple
+- Follow existing patterns in the codebase
+- Use [LANGUAGE/FRAMEWORK] when applicable
+- Prefer explicit over implicit

@@ -1,0 +1,11 @@
+# Ignore common files that don't need Claude's attention
+node_modules/
+.git/
+*.log
+.DS_Store
+dist/
+build/
+coverage/
+
+# Claude settings (keep private)
+.claude/settings.local.json
