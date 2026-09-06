@@ -6,6 +6,8 @@
 
 ---
 
+**New agent or new session?** Read [`START-HERE.md`](START-HERE.md) first.
+
 ## Why this exists
 
 Blender's official MCP add-on lets an LLM execute Python inside Blender. It also offers screenshots — but over that transport, images are budgeted, downscaled, and arrive too degraded for the agent to read anything but the simplest scene. The human sees a crisp render; the agent sees mush.

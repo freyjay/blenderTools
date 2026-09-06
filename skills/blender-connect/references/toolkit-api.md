@@ -1,3 +1,14 @@
+# Toolkit API
+
+> **LOAD PATTERN (v0.5.0, supersedes any `sys.path` / `sys.modules.pop` / `import eye, senses` text below):**
+> ```python
+> import blendertools as bt
+> bt.doctor(); bt.calibration.run_all()      # must pass first
+> bt.eye.render_ascii(...); bt.senses.proportions(...); bt.mesh_mind.fuse_group(...)
+> bt.reload()                                # after editing any module
+> ```
+> The package is symlinked into Blender's `scripts/modules`; no path hacks. See `START-HERE.md`.
+
 # Toolkit API -- eye.py / senses.py
 
 Load pattern (Blender Python, avoids stale-module bugs):
