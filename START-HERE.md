@@ -11,6 +11,9 @@ Three layers. You own two of them.
   interpreter. Text-based vision, measurement senses, part-graph, gauges, and a
   ground-truth calibration suite. Already symlinked into Blender's
   `scripts/modules` by `blendertools/install.py` (run it once per Blender; see INSTALL.md); then `import blendertools as bt` works in any session.
+- **Generator (attached, not ours)**: an external image-to-3D service (Meshy / Hyper3D Rodin)
+  called through `recipes.generate` with full provenance. Its output is measured like any
+  other mesh, never trusted. Not installed yet — see STATUS.md.
 - **Method**: `skills/blender-connect/SKILL.md`. Doctrine and workflow. Runs in
   YOUR context — it decides how you act on what the instruments tell you.
 
@@ -53,9 +56,9 @@ g = gauge.gate(sc); gauge.log(sc); gauge.approve(sc["id"])   # gate -> log (hist
 "Better" means gate() reports no regressions against a compatible baseline; the composite is one lens, not the verdict.
 
 ## The one loop
-compare output to the REFERENCE (fresh, not cached) → find distinctions with
-magnitudes → check the ENGINE can measure them truthfully (calibrate if not) →
-adjust the MODEL → verify in the same window → log. Repeat.
+reference (fresh, registered) → GENERATE or build the base mesh → measure against the
+reference (calibrate the instrument first if it cannot) → correct the MODEL as plan edits →
+verify in the same window → gauge → gate against the approved baseline → log. Repeat.
 
 ## Repos
 - `~/Developer/blenderTools` — live, GitHub `freyjay/blenderTools`. Work here.

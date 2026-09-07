@@ -2,7 +2,7 @@
 
 The working checklist. `docs/structure.html` is the same information drawn for
 outsiders; when this file changes, update the `NODES` / `OPEN` arrays there too.
-Last updated: 2026-09-07 (evening) · v0.9.0 (`4cabe32`) · suite 29/29 isolated **and** 29/29 live over MCP.
+Last updated: 2026-09-07 (night) · v0.9.0 (`a52746a`) · suite 29/29 isolated **and** 29/29 live over MCP · **direction recalibrated** (see Goals).
 
 Status marks: `[x]` built and tested · `[~]` built, never executed · `[!]` built, known limitation · `[ ]` missing or blocked
 
@@ -60,21 +60,29 @@ Status marks: `[x]` built and tested · `[~]` built, never executed · `[!]` bui
 - transport: `[x]` execute_blender_code · `[x]` socket patch · `[!]` screenshots over this add-on · `[x]` live round-trip on v0.9
 - installer: `[~]` install.py · `[x]` INSTALL.md
 
+## Goals (recalibrated 2026-09-07)
+**We do not compete on generation.** Multi-view image-to-3D (Meshy, Hyper3D Rodin, Tripo) produces likeness we cannot reach by scripting primitives, and the 2026 consensus says so plainly. **We own measurement, correction and proof** — the layer that ecosystem lacks and that two external audits confirmed. Pipeline: five references + registration manifest → generated base mesh with provenance → measured against the same references → corrections as plan edits → quad remesh at detail 4 → gate → human approval → ledger. The sphere-blockout route survives only as a control experiment on the same ruler.
+
+**Target for the boy (what "good" means):** silhouette IoU ≥ 0.95 on front *and* profile at fixed registration; reference-derived ratios (not canon defaults) within 0.02; quad topology with subdivision at detail 4; your approval. That is the generators' "level 3" with numbers attached.
+
 ## Open items — in the order of what unblocks what
 - [ ] Add `~/Developer/blenderTools` to the filesystem connector — *you*
 - [x] Open Blender with the MCP server; run `bt.calibration.run_isolated()` once for real — 2026-09-07, `calibration-2026-09-07T124513.json`, 29/29, exit contract honored
 - [x] One live MCP round-trip of the suite — 2026-09-07, `calibration-2026-09-07T124543.json`, `headless: false`, 29/29, scene integrity ok. Also: the audit's Edit-Mode scenario reproduced live and **refused** by preflight. (`not_verified` text in code updated in v0.9.1.)
 - [x] `bt.plan.capture("boy_v3", …)` → `plans/boy_v3.json` — 64 parts, 6 layers, sha `cad4416a…`; shapes recorded as spheres (stated in notes); `JawBlend` declared in graph but absent, skipped
 - [~] First scorecards taken on the same ruler: **v1 0.6151 · v2 0.8425 · v3 0.7401** (logged, ids 6e94b56a / 2eabf9ca / 5eb8b2ea). **Approval deliberately withheld**: all three predate the instruments; v3 regressed from v2 and nothing caught it. The baseline must be the loop's own first output — see the zero step below.
-- [ ] **Zero step**: write the brief (a client-style request) and put the five reference images on disk with a registration manifest (`refs/boy/`) — *you + agent*
-- [ ] Author `plans/boy_v4.json` from the brief's measurements (not canon defaults); build at detail 3; scorecard; **approve as the first baseline** — *agent + you*
+- [ ] **Zero step**: write the brief (a client-style request); save the five reference images to `refs/boy/`; I build the registration manifest (face box, eye line, scale per image) — *you + agent*
+- [ ] **Generator adapter**: `recipes.generate` (Meshy or Rodin REST API, multi-image), `plan.add_generated_part` recording job id / input hashes / parameters / output hash, GLB import into the build collection, tests — *agent*
+- [ ] API key (Meshy first; Rodin if likeness disappoints) — *you*
+- [ ] **First generated baseline**: five references in → mesh out → imported with provenance → scorecard against the same references at fixed registration → **approve** — *you + agent*
+- [ ] **Control experiment**: build boy_v4 from `plans/boy_v3.json` at detail 3 and score it on the same ruler as the generated mesh; record the gap — *agent*
 - [ ] v0.9.1: call tests for quadriflow, hair_pods, hero_spikes, capture, scorecard, attribute_point, owner_at — *agent*
 - [ ] v0.9.1: adopt Studio's parented-transform and loose-linework checks, credited — *agent*
 - [ ] Rewrite `SKILL.md` + `toolkit-api.md` for v0.9; re-upload the skill — *agent + you*
 - [ ] Send `Mac-Results-Studio-v03.zip` (`d49fe0bd…`) and the v0.9 reply letters to the Astra team — *you*
-- [ ] Rebuild the boy from its plan at detail 3 → gauge → approve: first end-to-end loop on the new instruments — *agent*
-- [ ] Improvement loops: edit plan → build → gauge → gate → approve, each one in the ledger — *agent*
-- [ ] Topology frontier: quadriflow + subdivision-ready mesh at detail 4–5 — *agent*
+- [ ] Improvement loops on the generated mesh: measure → correct as plan edits → gauge → gate → approve, each one in the ledger — *agent*
+- [ ] Topology: quadriflow + subdivision on the generated mesh at detail 4–5 — *agent*
+- [ ] v0.9.1 also: `eye._targets` → `scene.objects` (context-independent after `open_mainfile`); update calibration `not_verified` text for run_isolated / live transport — *agent*
 - [ ] Second subject from a plan (the cat) to prove generality — *agent*
 - [ ] Fresh-agent test: new session, `START-HERE.md` only, no help — *you*
 - [ ] Housekeeping: dedupe `INSTALL.md`; archive `freyjay/blender_connect`; private repo for `internal/` — *you*
@@ -87,4 +95,4 @@ Status marks: `[x]` built and tested · `[~]` built, never executed · `[!]` bui
 - The gauge measures fidelity and mesh health, not appeal. A baseline is a floor, not an endorsement; human review (`approve`) stays a separate act.
 
 ## What "done" means
-The loop has run end to end on the new instruments: a real model rebuilt from its plan, measured by a scorecard, gated against an approved baseline, and logged — with the live transport, the installer and `run_isolated()` all executed at least once.
+A written brief; five references with a registration manifest; a generated base mesh imported with provenance; measured against the references (IoU ≥ 0.95 front and profile at fixed registration, reference-derived ratios within 0.02); corrected via plan edits; quad-remeshed at detail 4; gated against an approved baseline; approved by a human; logged. Plus the installer executed once and the parented-transform test adopted. `run_isolated()` and the live transport are already done.

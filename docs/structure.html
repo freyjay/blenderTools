@@ -103,7 +103,7 @@
     <div class="stat"><small>TESTS</small><b>29 / 29 · isolated process</b></div>
     <div class="stat"><small>MODULES</small><b>12 in package</b></div>
     <div class="stat"><small>AUDIT FINDINGS</small><b>25 closed · 2 rounds</b></div>
-    <div class="stat"><small>MODELS ON RECORD</small><b>3 — none from a plan yet</b></div>
+    <div class="stat"><small>MODELS ON RECORD</small><b>3 blockouts · v1 .615 v2 .843 v3 .740 · none approved</b></div>
     <div class="stat grow"><small>OPEN ITEMS</small><b id="openCount">—</b></div>
     <div class="actions">
       <button id="btnView" aria-pressed="true">CIRCLE VIEW</button>
@@ -222,6 +222,11 @@ const NODES = [
   does:'Discovers this Blender’s scripts/modules directory, links the package, verifies the import, refuses to replace a real directory.',
   built:'Runs inside Blender (bpy.utils.user_resource). Prints one JSON line. Never executed — only the existing-symlink upgrade path has been used.',
   cond:['Fresh ZIP, fresh clone and install.py itself untested. Windows run requested from the Astra team.']},
+ {id:'Y',letter:'Y',name:'Generator (attached)',sec:'transport',x:10.2,y:11.4,w:1.9,d:1.6,h:.8,status:'missing',
+  fns:[['recipes.generate (Meshy / Rodin API, multi-image)','missing'],['plan.add_generated_part (provenance: job, inputs, params, output hash)','missing'],['GLB import into the build collection','missing']],
+  does:'Not ours and never trusted. A multi-view image-to-3D service produces the base mesh from the references; blendertools measures it against the same references, corrects it as plan edits, remeshes and gates it. Direction recalibrated 2026-09-07: we stop competing on generation and own measurement, correction and proof.',
+  built:'Nothing yet. A ~200-line adapter: submit the reference images, poll the job, download the GLB, record provenance in the plan before the mesh is touched. Meshy first; Rodin if likeness disappoints.',
+  cond:['Not installed. Needs an API key and the five references on disk with a registration manifest.']},
  // METHOD
  {id:'Q',letter:'Q',name:'Skill',sec:'method',x:5.8,y:-2.6,w:1.8,d:1.5,h:1.2,status:'limited',
   fns:[['skills/blender-connect/SKILL.md (14 rules + 15, 16)','limited'],['references/toolkit-api.md','limited'],['references/session-lessons.md','tested'],['claude.ai upload (zip)','untested']],
@@ -276,9 +281,12 @@ const OPEN = [
  ['v0.9.1: adopt Studio’s parented-transform and loose-linework checks, credited','agent'],
  ['Rewrite SKILL.md + toolkit-api.md for v0.9 (plans, approve lifecycle, caster policies, preflight); re-upload skill','agent + you'],
  ['Send Mac-Results-Studio-v03.zip (d49fe0bd…) and the v0.9 reply letters to the Astra team','you'],
- ['Rebuild the boy from its plan at detail 3 → gauge → approve: first end-to-end loop on the new instruments','agent'],
- ['Improvement loops: edit plan → build → gauge → gate → approve, each one in the ledger','agent'],
- ['Topology frontier: quadriflow + subdivision-ready mesh at detail 4–5','agent'],
+ ['Zero step: brief + five references in refs/boy/ + registration manifest','you + agent'],
+ ['Generator adapter: recipes.generate, plan.add_generated_part with provenance, GLB import, tests','agent'],
+ ['First generated baseline: generate → import → scorecard vs references → approve','you + agent'],
+ ['Control experiment: boy_v4 from plans/boy_v3.json on the same ruler as the generated mesh','agent'],
+ ['Improvement loops on the generated mesh: measure → plan edits → gauge → gate → approve','agent'],
+ ['Topology: quadriflow + subdivision on the generated mesh at detail 4–5','agent'],
  ['Second subject from a plan (the cat) to prove generality','agent'],
  ['Fresh-agent test: new session, START-HERE.md only, no help','you'],
  ['Housekeeping: dedupe INSTALL.md; archive freyjay/blender_connect; private repo for internal/','you'],
@@ -331,7 +339,7 @@ const CIRC = {};
   inner.forEach(([id,a])=>{CIRC[id]={cx:CX+INNER*Math.cos(a),cy:CY+INNER*Math.sin(a),r:26,a}});
   Object.assign(CIRC,{
     Q:{cx:150,cy:120,r:30}, H:{cx:250,cy:70,r:30},
-    Z:{cx:120,cy:660,r:28}, T:{cx:230,cy:715,r:34}, I:{cx:350,cy:660,r:28},
+    Z:{cx:120,cy:660,r:28}, T:{cx:230,cy:715,r:34}, I:{cx:350,cy:660,r:28}, Y:{cx:470,cy:710,r:30},
     V:{cx:1010,cy:250,r:32}, X:{cx:1100,cy:360,r:28}, A:{cx:1010,cy:470,r:30}, W:{cx:1110,cy:580,r:30}});
 })();
 const short=f=>{let t=f.split(/[ (→—]/)[0].replace(/^(plan|senses|measure|gauge|recipes|mesh_mind|cast|eye|config|refs|bt)\./,'');return t.length>16?t.slice(0,15)+'…':t};
@@ -477,7 +485,7 @@ function condPanel(n){
   return `<div class="eyebrow">BLENDERTOOLS · CONDITION</div><h1>What is still open</h1><div class="sub">${OPEN.length} items · ${done.size} ticked in this view (not saved)</div>
     <h5>THE CHECKLIST, IN ORDER OF WHAT UNBLOCKS WHAT</h5><div id="checks">${items}</div>
     <h5>CONDITIONS ON PARTS</h5><ul>${parts}</ul>
-    <h5>WHAT “DONE” MEANS</h5><p>The loop has run end to end on the new instruments: a real model rebuilt from its plan, measured by a scorecard, gated against an approved baseline, and logged — with the live transport, the installer and <code>run_isolated()</code> all executed at least once.</p>`;
+    <h5>WHAT “DONE” MEANS</h5><p>A brief; five references with a registration manifest; a generated base mesh imported with provenance; measured against the references (IoU ≥ 0.95 front and profile at fixed registration, reference-derived ratios within 0.02); corrected via plan edits; quad-remeshed at detail 4; gated against an approved baseline; approved by a human; logged.</p>`;
 }
 document.getElementById('read').addEventListener('change',e=>{
   if(e.target.matches('input[data-i]')){const i=+e.target.dataset.i; e.target.checked?done.add(i):done.delete(i); render()}

@@ -1,6 +1,6 @@
 # blenderTools
 
-**Calibrated AI modeling in Blender, over MCP.** An AI agent (Claude) drives a live Blender session — but instead of trusting screenshots, it sees the scene through instruments made of math, verifies every adjustment against measurements, and keeps an honest ledger of what worked, what failed, and why.
+**Calibrated, verified 3D modeling in Blender, over MCP.** An AI agent (Claude) drives a live Blender session and treats every mesh the same way — whether built from primitives or produced by an external generator: measured against the reference with instruments made of math, corrected, gated against an approved baseline, and logged in an honest ledger of what worked, what failed, and why.
 
 > The premise: an agent that can *measure* what it built is more useful than one that can only *describe* what it meant to build.
 
@@ -17,6 +17,10 @@ Blender's official MCP add-on lets an LLM execute Python inside Blender. It also
 So this project gives the agent a different kind of sight. Every "view" is a ray-cast render expressed as **text**: object IDs, silhouette edges, depth ramps, surface shading — characters instead of pixels. Text always survives the wire. On top of that sit measurement senses (proportion, contour angle, rotation continuity, surface hardness, cavity depth, a 30×30 occupancy grid), a part-graph that declares which surfaces must be continuous and where breaks belong, and a ground-truth calibration suite that tests the instruments against shapes with exactly known geometry.
 
 The result is a loop: **compare to reference → calibrate the instrument → adjust the model → verify in the same window.** Repeated until the translation between what is seen and what is measured is in sync.
+
+## Direction (recalibrated 2026-09-07)
+
+The 2026 consensus is blunt and, on our evidence, correct: an MCP-driven Blender is an excellent *operator* and a poor *modeller*; organic likeness is a generation problem, not a scripting problem. Our sphere blockouts confirmed it — scored on one ruler, v1 0.615 → v2 0.843 → v3 0.740, a regression nothing caught. So this project stops competing on generation and does the thing the generation ecosystem lacks: **measurement, correction and proof.** Base meshes come from an attached multi-view generator (Meshy or Hyper3D Rodin, called through `recipes.generate` with full provenance); blendertools measures them against the same references at fixed registration, records corrections as plan edits, quad-remeshes, gates every version against an approved baseline, and keeps the ledger. A generated mesh enters the loop like any other build: measured, never trusted.
 
 ## What it has done
 
@@ -119,7 +123,7 @@ After editing any module: `bt.reload()`.
 
 ## Status
 
-**v0.9.0 — working, experimental, honest about its ceiling.** An independent audit of v0.6.0 reproduced twelve defects; the original reproductions from both audits are fixed with regression tests (`AUDIT-RESPONSE.md`; follow-up findings are tracked in the ledger). The full safety contract — live MCP round-trip, fresh install, Metal render, parented/animated transforms, vessel containment — is **not** yet verified and is listed as such in every report. Models are sphere-blockout plus voxel fusion; the topology gap (quad flow, subdivision-ready meshes) is the current frontier, and `recipes.quadriflow` is the first step. The calibration suite passes 29/29: 5 known-geometry cases, 23 regression tests from two external audits, and a scene-integrity assertion (objects, selection, active object, mesh and collection counts, planted decoys). The gauge system exists but has one baseline logged. The tooling grew inside one long collaborative session between a human teaching calibration the way an atelier teaches drawing and an agent building the instruments it was being taught to use — the ledger reads accordingly.
+**v0.9.0 — working, experimental, honest about its ceiling.** An independent audit of v0.6.0 reproduced twelve defects; the original reproductions from both audits are fixed with regression tests (`AUDIT-RESPONSE.md`; follow-up findings are tracked in the ledger). The full safety contract — live MCP round-trip, fresh install, Metal render, parented/animated transforms, vessel containment — is **not** yet verified and is listed as such in every report. Models so far are sphere-blockout plus voxel fusion, built before the instruments existed; see *Direction* above for what replaces them as the base-mesh source. The calibration suite passes 29/29: 5 known-geometry cases, 23 regression tests from two external audits, and a scene-integrity assertion (objects, selection, active object, mesh and collection counts, planted decoys). The gauge has three logged scorecards (v1/v2/v3 on one ruler) and — deliberately — no approved baseline yet: the first baseline will be the loop's own first output from a written brief. The tooling grew inside one long collaborative session between a human teaching calibration the way an atelier teaches drawing and an agent building the instruments it was being taught to use — the ledger reads accordingly.
 
 ## Credits
 

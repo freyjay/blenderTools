@@ -261,3 +261,13 @@ now by created reference and per-model token; fusion is staged; baselines are
 approved, not merely logged. Installer is destination-aware; state dir is
 configurable; evidence is machine-readable. First run of the new exit-code
 contract caught two of my own stale tests before anything was committed.
+
+
+## 2026-09-07 -- direction recalibrated
+Research and our own numbers agree: MCP-driven Blender is an operator, not a
+modeller; likeness is a generation problem. On one ruler v1 0.615 -> v2 0.843 ->
+v3 0.740 -- a regression nothing caught. We stop competing on generation and own
+measurement, correction and proof: base meshes from an attached multi-view
+generator (Meshy/Rodin) with full provenance, measured against the references at
+fixed registration, corrected as plan edits, quad-remeshed, gated, approved,
+logged. Doctrine 17 added. No baseline approved until the loop's own first output.

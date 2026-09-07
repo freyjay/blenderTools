@@ -108,3 +108,8 @@ case studies behind every doctrine line.
     call crashes (external audit of v0.6.0: 12 reproduced defects, 5/5 passing).
 16. Patch anchors are REQUIRED. A text edit that silently no-ops when its anchor
     is missing is how a stale import survived a rename. Abort loudly instead.
+17. Generation is attached, never trusted. A mesh from an external generator enters
+    the loop like any other build: provenance recorded first (job id, input hashes,
+    parameters, output hash), then measured against the reference at fixed
+    registration, corrected as plan edits, gated. The gauge does not care where a
+    mesh came from; it asks the same question of all of them.
