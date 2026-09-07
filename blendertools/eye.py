@@ -40,7 +40,10 @@ def _basis(view):
 
 
 def _targets(frame):
-    objs = [o for o in bpy.context.visible_objects if o.type == "MESH"]
+    """Visible mesh objects, optionally limited to `frame`. Uses scene.objects +
+    hide_get(), not bpy.context.visible_objects, which does not exist in socket or
+    timer contexts or right after wm.open_mainfile (live finding 2026-09-07)."""
+    objs = [o for o in bpy.context.scene.objects if o.type == "MESH" and not o.hide_get()]
     if frame:
         wanted = set(frame)
         objs = [o for o in objs if o.name in wanted]

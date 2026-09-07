@@ -180,7 +180,8 @@ def build(resolved, clear_first=False, fuse=True, collection=None, on_collision=
         raise ValueError("build() needs a resolved plan -- call resolve() first")
     if not verify(resolved):
         raise ValueError("build(): plan hash does not match its content -- plan was edited after resolve()")
-    if bpy.context.object is not None and bpy.context.object.mode != "OBJECT":
+    _act = bpy.context.view_layer.objects.active if bpy.context.view_layer else None
+    if _act is not None and _act.mode != "OBJECT":
         raise RuntimeError("build(): Blender must be in Object Mode")
     model = resolved["model"]
     build_id = uuid.uuid4().hex[:10]

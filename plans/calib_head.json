@@ -1,0 +1,279 @@
+{
+  "schema": 1,
+  "model": "calib_head",
+  "detail": 3,
+  "notes": "ground-truth subject for gauge calibration, 2026-09-07. Known geometry; one deliberate asymmetry (right ear larger, single hair crest offset left) so mirror errors cannot hide. Reference images rendered FROM this model with exact camera parameters.",
+  "package": "0.9.0",
+  "parameters": {},
+  "layers": {
+    "skin": {
+      "continuity": "fuse"
+    },
+    "features": {
+      "continuity": "separate"
+    },
+    "hair": {
+      "continuity": "separate"
+    }
+  },
+  "parts": [
+    {
+      "name": "Cranium",
+      "layer": "skin",
+      "shape": "sphere",
+      "location": [
+        0.0,
+        0.0,
+        0.15
+      ],
+      "scale": [
+        0.95,
+        1.05,
+        1.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": null,
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Jaw",
+      "layer": "skin",
+      "shape": "sphere",
+      "location": [
+        0.0,
+        -0.1,
+        -0.55
+      ],
+      "scale": [
+        0.7,
+        0.75,
+        0.55
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": null,
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Neck",
+      "layer": "skin",
+      "shape": "cylinder",
+      "location": [
+        0.0,
+        0.05,
+        -1.25
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": null,
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {
+        "radius": 0.33,
+        "depth": 0.7
+      }
+    },
+    {
+      "name": "Nose",
+      "layer": "features",
+      "shape": "cone",
+      "location": [
+        0.0,
+        -0.98,
+        -0.2
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rotation": [
+        -90.0,
+        0.0,
+        0.0
+      ],
+      "color": null,
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {
+        "radius1": 0.16,
+        "radius2": 0.04,
+        "depth": 0.34
+      }
+    },
+    {
+      "name": "EarL",
+      "layer": "features",
+      "shape": "sphere",
+      "location": [
+        -0.98,
+        0.05,
+        -0.05
+      ],
+      "scale": [
+        0.1,
+        0.22,
+        0.3
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": null,
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "EarR",
+      "layer": "features",
+      "shape": "sphere",
+      "location": [
+        0.98,
+        0.05,
+        -0.05
+      ],
+      "scale": [
+        0.13,
+        0.3,
+        0.4
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": null,
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "EyeL",
+      "layer": "features",
+      "shape": "sphere",
+      "location": [
+        -0.36,
+        -0.86,
+        0.12
+      ],
+      "scale": [
+        0.16,
+        0.14,
+        0.16
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": null,
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "EyeR",
+      "layer": "features",
+      "shape": "sphere",
+      "location": [
+        0.36,
+        -0.86,
+        0.12
+      ],
+      "scale": [
+        0.16,
+        0.14,
+        0.16
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": null,
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Crest",
+      "layer": "hair",
+      "shape": "cone",
+      "location": [
+        -0.25,
+        0.1,
+        1.25
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rotation": [
+        0.0,
+        -12.0,
+        0.0
+      ],
+      "color": null,
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {
+        "radius1": 0.28,
+        "radius2": 0.03,
+        "depth": 0.75
+      }
+    }
+  ],
+  "resolved_parameters": {
+    "detail": 3
+  },
+  "profile": {
+    "name": "defined",
+    "voxel": 0.05,
+    "segments": 24,
+    "hair_pods": 45,
+    "senses": [
+      "proportions",
+      "silhouette",
+      "hardness",
+      "turntable"
+    ],
+    "gauge": true,
+    "quadriflow": false
+  },
+  "build_options": {
+    "voxel": 0.05,
+    "segments": 24
+  },
+  "sha256": "d5e5b130412ff3aa80c5cc6d350509b1b1891cc2eb1b2a04d8cacd7a00208211"
+}

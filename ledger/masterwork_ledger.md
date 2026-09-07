@@ -271,3 +271,15 @@ measurement, correction and proof: base meshes from an attached multi-view
 generator (Meshy/Rodin) with full provenance, measured against the references at
 fixed registration, corrected as plan edits, quad-remeshed, gated, approved,
 logged. Doctrine 17 added. No baseline approved until the loop's own first output.
+
+
+## 2026-09-07 -- gauge calibrated on known geometry (calib_head)
+A subject we authored as a plan, rendered to three orthographic references with an
+exact pixel->world manifest, then read back through the manifest alone: IoU 0.988 /
+0.996 / 0.991 against the instrument. Registration is right; the noise floor is ~0.01.
+Sensitivity: ear-size error -0.015, mirrored crest -0.054 from the front and 0.000
+from the top (silhouette is outline-only -- interior features need id/depth renders),
+jaw +10% -0.031 with a live staged re-fuse that replaced the prior result. The IoU
+target is now stated as a pair with ratio tolerances. Live-context defects fixed in
+plan.build, preflight and eye._targets; suite 29/29 before commit. Mistake recorded:
+the reference PNGs carry the silhouette in ALPHA (no World in an empty scene).

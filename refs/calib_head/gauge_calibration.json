@@ -1,0 +1,41 @@
+{
+  "subject": "calib_head",
+  "date": "2026-09-07",
+  "purpose": "ground-truth calibration of the registration + silhouette-IoU pipeline and its sensitivity",
+  "registration_image_vs_instrument_iou": {
+    "FRONT": 0.9882,
+    "RIGHT": 0.9962,
+    "TOP": 0.9906,
+    "n": 32,
+    "note": "reference PNG digitized via manifest only (alpha>0.5); 1-3 edge cells differ per view of ~255 occupied -> noise floor ~0.01"
+  },
+  "sensitivity": {
+    "truth": {
+      "FRONT": 1.0,
+      "RIGHT": 1.0,
+      "TOP": 1.0
+    },
+    "earR_shrunk_to_earL": {
+      "FRONT": 0.9842,
+      "TOP": 0.9858
+    },
+    "crest_mirrored": {
+      "FRONT": 0.9462,
+      "TOP": 1.0,
+      "note": "TOP blind: crest footprint lies inside the cranium outline -- silhouette IoU cannot see interior features"
+    },
+    "jaw_plus_10pct_refused_live": {
+      "FRONT": 0.9693,
+      "RIGHT": 0.9811,
+      "staged_fusion_replaced_prior": true,
+      "islands": 1
+    }
+  },
+  "conclusions": [
+    "manifest pixel->world mapping is correct (a one-cell shift would read ~0.85)",
+    "IoU noise floor at n=32 ~ 0.01; small features (ears) move IoU ~0.015 -- near the floor; use n=64 or ratios for them",
+    "IoU >= 0.95 alone accepts a 10% jaw error (0.969); state the target together with reference-derived ratios within 0.02",
+    "silhouette IoU is outline-only; interior features need eye id/depth renders",
+    "live-context fixes verified by the suite: plan.build/preflight no longer use bpy.context.object; eye._targets uses scene.objects"
+  ]
+}

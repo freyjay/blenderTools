@@ -1,0 +1,283 @@
+{
+  "passed": true,
+  "run_id": "f8465442",
+  "n_tests": 29,
+  "n_passed": 29,
+  "results": {
+    "bisect_guard": {
+      "pass": true,
+      "root": 0.50001
+    },
+    "torus": {
+      "pass": true,
+      "R": [
+        0.9999998092651371,
+        1.0
+      ],
+      "r": [
+        0.2999998092651369,
+        0.3
+      ],
+      "transitions": [
+        -1.3,
+        -0.7,
+        0.7,
+        1.3
+      ]
+    },
+    "pyramid": {
+      "pass": true,
+      "slope": [
+        -1.0,
+        1.0
+      ],
+      "amplitude": [
+        0.49,
+        0.5
+      ],
+      "assumptions": [
+        "vertex-on achieved at rot=0.0"
+      ]
+    },
+    "occlusion": {
+      "pass": true,
+      "right_edge": [
+        1.2975,
+        1.3
+      ]
+    },
+    "plan": {
+      "pass": true,
+      "checks": {
+        "expression": true,
+        "gate_3": true,
+        "gate_5": true,
+        "hash_stable": true,
+        "hash_detail": true,
+        "hash_profile": true,
+        "verify_rejects_tamper": true,
+        "build_count": true,
+        "provenance": true,
+        "in_collection": true,
+        "rejects_code": true
+      }
+    },
+    "audit_P1_2_public_imports": {
+      "pass": true,
+      "checks": {
+        "occupancy_grid": "ok",
+        "silhouette": "ok",
+        "proportions": "ok",
+        "render_ascii": "ok",
+        "island_census": "ok",
+        "topology": "ok",
+        "parts_at_height": "ok",
+        "overlap_candidates": "ok",
+        "enclosure_check": "ok"
+      }
+    },
+    "audit_P1_3_refuse_render_visible": {
+      "pass": true,
+      "hide_render_first": false,
+      "hide_render_second": false
+    },
+    "audit_P1_4_bad_frame_rejected": {
+      "pass": true,
+      "checks": {
+        "proportions": "rejected",
+        "render_ascii": "rejected",
+        "empty_frame": "rejected"
+      }
+    },
+    "audit_P1_5_gate_order": {
+      "pass": true,
+      "gate_after_log": false,
+      "cross_model": {
+        "ok": null,
+        "status": "unverified",
+        "verified": false,
+        "same_model_history": 0,
+        "approved_compatible": 0,
+        "note": "no approved compatible baseline -- run gate after approving one; this is not a pass"
+      }
+    },
+    "audit_P2_7_width_out_of_range": {
+      "pass": true,
+      "width": 2.0,
+      "sampled_z": 0.02
+    },
+    "audit_P2_8_fuse_contract": {
+      "pass": true,
+      "checks": {
+        "separate_refused": true,
+        "collision_refused": true,
+        "foreign_survived": true
+      }
+    },
+    "audit_P2_11_iou_shape": {
+      "pass": true
+    },
+    "audit_P2_11_cross_section": {
+      "pass": true,
+      "n_points": 2,
+      "edges": [
+        [
+          0,
+          1
+        ]
+      ]
+    },
+    "audit_P2_12_cavity_plane": {
+      "pass": true,
+      "max_depth": 2.0,
+      "containment": "not_verified",
+      "wall_coverage": 0.0
+    },
+    "audit_hardening_turntable_guard": {
+      "pass": true
+    },
+    "audit_P2_6_occupancy_occlusion": {
+      "pass": true,
+      "cells_before": 136,
+      "cells_after_blocker": 136
+    },
+    "audit_P2_6_policy_semantics": {
+      "pass": true,
+      "selected_cells": 112,
+      "visible_cells": 92
+    },
+    "audit_P2_7a_far_subject": {
+      "pass": true,
+      "widths": {
+        "front_far_neg": 2.0,
+        "front_far_pos": 2.0,
+        "right_far": 2.0,
+        "top_far": 2.0
+      }
+    },
+    "stageB_transforms_and_modifiers": {
+      "pass": true,
+      "measured": {
+        "scaled_w": 6.0,
+        "rotated_w": 2.829,
+        "array_w": 4.0
+      },
+      "expected": {
+        "scaled_w": 6.0,
+        "rotated_w": 2.828,
+        "array_w": 4.0
+      }
+    },
+    "followup_P1_1_editmode_rejected": {
+      "pass": true
+    },
+    "followup_P1_1_adopt_by_reference": {
+      "pass": true,
+      "adopted": "sphere_f8465442"
+    },
+    "followup_P1_2_clear_first_scoped": {
+      "pass": true,
+      "other_survived": true
+    },
+    "followup_P1_3_name_collision_refs": {
+      "pass": true,
+      "checks": {
+        "default_refuses": true,
+        "new_part_suffixed": true,
+        "fused_near_new_part": true,
+        "old_untouched": true,
+        "fused_in_collection": true
+      },
+      "bounds": [
+        [
+          -0.4967,
+          1.5033,
+          -0.5
+        ],
+        [
+          0.4967,
+          2.5,
+          0.5
+        ]
+      ]
+    },
+    "followup_P1_4_staged_fusion": {
+      "pass": true,
+      "checks": {
+        "nonmesh_refused": true,
+        "bad_voxel_refused": true,
+        "old_result_survived": true,
+        "no_staging_left": true
+      }
+    },
+    "followup_P2_5_hash_post_resolve": {
+      "pass": true,
+      "checks": {
+        "verifies_clean": true,
+        "profile_mutation_detected": true,
+        "build_refuses": true,
+        "config_not_aliased": true
+      }
+    },
+    "followup_P2_6_gauge_scope_lifecycle": {
+      "pass": true,
+      "checks": {
+        "scope_forwarded_iou_1": true,
+        "unscoped_refused": true,
+        "no_baseline_is_unverified": true,
+        "rejected_not_promoted": true
+      }
+    },
+    "followup_P2_7_measurement_validation": {
+      "pass": true,
+      "checks": {
+        "occupancy_missing": "rejected",
+        "occupancy_n_too_big": "rejected",
+        "occupancy_n_too_small": "rejected",
+        "senses_width_out_of_range": "rejected",
+        "grid_diff_shape": "rejected",
+        "grid_is_square": "rejected"
+      }
+    },
+    "followup_P2_8_leaky_vessel": {
+      "pass": true,
+      "containment": "not_verified",
+      "wall_coverage": 1.0
+    },
+    "audit_P1_1_scene_integrity": {
+      "pass": true,
+      "problems": [],
+      "decoys_survived": true
+    }
+  },
+  "scene_integrity": {
+    "ok": true,
+    "problems": []
+  },
+  "evidence": {
+    "package": "0.9.0",
+    "algorithm": "gauge-1",
+    "commit": "ef175233d73bdcac574f4c81966e351e04cb31eb",
+    "dirty_tree": true,
+    "blender": "5.1.2",
+    "python": "3.13.9",
+    "os": "Darwin 15.7.1",
+    "chip": "arm64",
+    "headless": true,
+    "install_route": {
+      "module_path": "/Users/francisrey/Developer/blenderTools/blendertools",
+      "realpath": "/Users/francisrey/Developer/blenderTools/blendertools",
+      "via_symlink": false
+    },
+    "state_dir": "/Users/francisrey/Developer/blenderTools",
+    "ts": "2026-09-07T14:15:22"
+  },
+  "not_verified": [
+    "live-scene measurement on a real model (this suite uses known primitives)",
+    "reference fidelity (see gauge.scorecard)",
+    "parented / animated transforms; multi-scene files; Sculpt/Pose modes (only Edit Mode refusal is tested)",
+    "run_isolated() exit/timeout contract (exercised manually, not inside this suite)",
+    "live MCP transport, Metal rendering, fresh-install path (outside this suite's scope)",
+    "vessel containment: cavity_probe reports depth + sampled wall coverage only"
+  ]
+}

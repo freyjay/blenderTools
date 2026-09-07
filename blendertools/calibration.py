@@ -36,12 +36,13 @@ class UnsafeSceneMode(RuntimeError):
 
 def preflight():
     """Reject unsafe modes BEFORE any operator or decoy creation."""
-    obj = bpy.context.object
+    obj = bpy.context.view_layer.objects.active if bpy.context.view_layer else None   # not bpy.context.object: absent in socket/timer contexts
     if obj is not None and obj.mode != "OBJECT":
         raise UnsafeSceneMode(f"calibration refuses to run: active object '{obj.name}' is in {obj.mode} mode. "
                               "Return to Object Mode, or use run_isolated().")
-    if getattr(bpy.context, "mode", "OBJECT") not in ("OBJECT",):
-        raise UnsafeSceneMode(f"calibration refuses to run in context mode {bpy.context.mode}")
+    mode = getattr(bpy.context, "mode", "OBJECT")
+    if mode not in ("OBJECT",):
+        raise UnsafeSceneMode(f"calibration refuses to run in context mode {mode}")
 
 
 def _n(base):

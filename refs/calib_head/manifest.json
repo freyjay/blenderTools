@@ -1,0 +1,86 @@
+{
+  "subject": "calib_head",
+  "plan": "plans/calib_head.json",
+  "plan_sha256_prefix": "d5e5b130412ff3aa",
+  "renderer": "Workbench FLAT, black silhouette on white",
+  "resolution": [
+    512,
+    512
+  ],
+  "ortho_width_units": 4.0,
+  "pixel_to_world": "u = cu - S/2 + (i+0.5)*S/W ; v = cv + S/2 - (j+0.5)*S/H  (i=column, j=row)",
+  "view_basis": {
+    "FRONT": "u=+X, v=+Z, camera at -Y",
+    "RIGHT": "u=+Y, v=+Z, camera at +X",
+    "TOP": "u=+X, v=+Y, camera at +Z"
+  },
+  "views": {
+    "FRONT": {
+      "file": "front.png",
+      "sha256": "b696a06c9cd8e101",
+      "center_uv": [
+        0.0,
+        0.0375
+      ],
+      "extent_uv": [
+        2.0,
+        2.0
+      ],
+      "camera_location": [
+        0,
+        -10,
+        0.0375
+      ],
+      "occupancy_cells": 253,
+      "grid_n": 32
+    },
+    "RIGHT": {
+      "file": "right.png",
+      "sha256": "b672af96df1b5f3e",
+      "center_uv": [
+        0.0,
+        0.0375
+      ],
+      "extent_uv": [
+        2.0,
+        2.0
+      ],
+      "camera_location": [
+        10,
+        0,
+        0.0375
+      ],
+      "occupancy_cells": 260,
+      "grid_n": 32
+    },
+    "TOP": {
+      "file": "top.png",
+      "sha256": "d093f28b5e36a6b6",
+      "center_uv": [
+        0.0,
+        -0.05
+      ],
+      "extent_uv": [
+        2.0,
+        2.0
+      ],
+      "camera_location": [
+        0,
+        -0.05,
+        10
+      ],
+      "occupancy_cells": 211,
+      "grid_n": 32
+    }
+  },
+  "frame": [
+    "Crest",
+    "EarL",
+    "EarR",
+    "EyeL",
+    "EyeR",
+    "Nose",
+    "calib_head__skinFused"
+  ],
+  "silhouette_channel": "alpha (scene had no World; background rendered transparent). Occupied = alpha > 0.5. RGB is black everywhere."
+}

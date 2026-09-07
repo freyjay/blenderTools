@@ -63,7 +63,7 @@ Status marks: `[x]` built and tested · `[~]` built, never executed · `[!]` bui
 ## Goals (recalibrated 2026-09-07)
 **We do not compete on generation.** Multi-view image-to-3D (Meshy, Hyper3D Rodin, Tripo) produces likeness we cannot reach by scripting primitives, and the 2026 consensus says so plainly. **We own measurement, correction and proof** — the layer that ecosystem lacks and that two external audits confirmed. Pipeline: five references + registration manifest → generated base mesh with provenance → measured against the same references → corrections as plan edits → quad remesh at detail 4 → gate → human approval → ledger. The sphere-blockout route survives only as a control experiment on the same ruler.
 
-**Target for the boy (what "good" means):** silhouette IoU ≥ 0.95 on front *and* profile at fixed registration; reference-derived ratios (not canon defaults) within 0.02; quad topology with subdivision at detail 4; your approval. That is the generators' "level 3" with numbers attached.
+**Target for the boy (what "good" means):** silhouette IoU ≥ 0.95 on front *and* profile at fixed registration **together with** reference-derived ratios (not canon defaults) within 0.02 — the two are calibrated to be read as a pair (`refs/calib_head/gauge_calibration.json`: IoU alone accepts a 10% jaw error at 0.969; silhouette is blind to interior features; noise floor ~0.01 at n=32); quad topology with subdivision at detail 4; your approval. That is the generators' "level 3" with numbers attached.
 
 ## Open items — in the order of what unblocks what
 - [ ] Add `~/Developer/blenderTools` to the filesystem connector — *you*
@@ -86,6 +86,9 @@ Status marks: `[x]` built and tested · `[~]` built, never executed · `[!]` bui
 - [ ] Second subject from a plan (the cat) to prove generality — *agent*
 - [ ] Fresh-agent test: new session, `START-HERE.md` only, no help — *you*
 - [ ] Housekeeping: dedupe `INSTALL.md`; archive `freyjay/blender_connect`; private repo for `internal/` — *you*
+
+## Gauge calibrated against known geometry — 2026-09-07
+`refs/calib_head/`: a plan-built subject with one deliberate asymmetry, rendered to three orthographic references with an exact manifest. Reference images digitized via the manifest alone agree with the instrument at IoU 0.988 / 0.996 / 0.991 (registration correct; noise floor ~0.01). Sensitivity: ear-size error −0.015, mirrored crest −0.054 (front) but **invisible from the top** — silhouette IoU is outline-only; jaw +10% −0.031 with a live staged re-fuse. Three live-context fixes (`bpy.context.object`, `visible_objects`) verified by the suite 29/29 before commit.
 
 ## Findings — 2026-09-07 live session
 - On one ruler, **v1 0.615 → v2 0.843 → v3 0.740**: v3 regressed from v2 and nothing caught it. This is the case for the gate.
