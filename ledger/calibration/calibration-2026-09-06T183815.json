@@ -1,0 +1,75 @@
+{
+  "passed": true,
+  "results": {
+    "bisect_guard": {
+      "pass": true,
+      "root": 0.50001
+    },
+    "plan": {
+      "pass": true,
+      "checks": {
+        "expression": true,
+        "gate_filters_at_3": true,
+        "gate_opens_at_5": true,
+        "hash_stable": true,
+        "hash_differs_by_detail": true,
+        "build_count": true,
+        "provenance": true,
+        "rejects_code": true
+      }
+    },
+    "torus": {
+      "pass": true,
+      "R": [
+        0.9999998092651371,
+        1.0
+      ],
+      "r": [
+        0.2999998092651369,
+        0.3
+      ],
+      "n_transitions": 4,
+      "transitions": [
+        -1.3,
+        -0.7,
+        0.7,
+        1.3
+      ]
+    },
+    "pyramid": {
+      "pass": true,
+      "slope": [
+        -1.0,
+        1.0
+      ],
+      "amplitude": [
+        0.49,
+        0.5
+      ],
+      "assumptions": [
+        "vertex-on achieved at rot=0.0"
+      ]
+    },
+    "occlusion": {
+      "pass": true,
+      "right_edge": [
+        1.2975,
+        1.3
+      ]
+    }
+  },
+  "assumptions": [
+    "vertex-on achieved at rot=0.0"
+  ],
+  "evidence": {
+    "package": "0.6.0",
+    "blender": "5.1.2",
+    "platform": "Darwin arm64",
+    "headless": true,
+    "ts": "2026-09-06T18:38:15"
+  },
+  "not_verified": [
+    "live-scene measurement on a real model (this suite uses known primitives)",
+    "reference fidelity (see gauge.scorecard)"
+  ]
+}

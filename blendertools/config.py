@@ -60,8 +60,38 @@ HAIR = {
     "hero_standing_bias": (-0.15, -0.60, 0.50),   # outward + forward-up lean; tangent mode CANNOT make a spike
 }
 
+# --------------------------------------------------------- detail profiles ----
+# A detail level is a PROCESS-DEPTH dial: how fine we fuse, how many pods, which
+# senses run, whether quad-remesh happens. Names describe what the pipeline DOES,
+# never what the result will look like -- a config string must not promise what a
+# gauge cannot confirm (the Astra Studio study's one habit worth NOT copying).
+DEFAULT_DETAIL = 3
+DETAIL_PROFILES = {
+    1: {"name": "blockout",  "voxel": 0.08,  "segments": 16, "hair_pods": 0,  "senses": ["proportions"],
+        "gauge": False, "quadriflow": False},
+    2: {"name": "massed",    "voxel": 0.06,  "segments": 20, "hair_pods": 30, "senses": ["proportions", "silhouette"],
+        "gauge": False, "quadriflow": False},
+    3: {"name": "defined",   "voxel": 0.05,  "segments": 24, "hair_pods": 45,
+        "senses": ["proportions", "silhouette", "hardness", "turntable"], "gauge": True, "quadriflow": False},
+    4: {"name": "refined",   "voxel": 0.045, "segments": 32, "hair_pods": 60,
+        "senses": ["proportions", "silhouette", "hardness", "turntable", "occupancy"], "gauge": True, "quadriflow": True},
+    5: {"name": "finished",  "voxel": 0.04,  "segments": 48, "hair_pods": 80,
+        "senses": ["proportions", "silhouette", "hardness", "turntable", "occupancy", "cavity"], "gauge": True,
+        "quadriflow": True, "subdivision": 1},
+}
+
+# ------------------------------------------------------------ patch check ----
+# The local socket fix to the official MCP addon (docs/PATCHES.md) is reverted by
+# any addon reinstall. doctor() checks for this marker in the live file.
+MCP_ADDON_FILE = "~/Library/Application Support/Blender/{ver}/extensions/user_default/mcp/mcp_to_blender_server.py"
+MCP_PATCH_MARKER = "_sendall_blocking"
+
+# ------------------------------------------------------------- evidence ----
+CALIBRATION_REPORT_DIR = "~/Developer/blenderTools/ledger/calibration"
+PLANS_DIR = "~/Developer/blenderTools/plans"
+
 # ------------------------------------------------------------------ gauge ----
-VERSION_STR = "0.5.0"
+VERSION_STR = "0.6.0"
 GAUGE_LOG = "~/Developer/blenderTools/ledger/gauge_log.jsonl"
 # Composite weights. Transparent on purpose: change these, and the composite
 # score means something different -- so log the weights with the score.

@@ -146,6 +146,11 @@ def topology(obj_name):
     lengths = [e.calc_length() for e in bm.edges] or [0.0]
     mean_len = sum(lengths) / len(lengths)
     slivers = sum(1 for L in lengths if L < 0.05 * mean_len)
+    # mesh-sanity fields (adopted from the Astra Studio QA audit)
+    loose_verts = sum(1 for v in bm.verts if not v.link_edges)
+    degenerate = sum(1 for f in bm.faces if f.calc_area() < 1e-10)
+    negative_scale = obj.matrix_world.determinant() < 0
+    empty_slots = sum(1 for sl in obj.material_slots if sl.material is None)
     # islands
     bm.verts.ensure_lookup_table()
     unvisited = set(v.index for v in bm.verts); islands = 0
@@ -160,13 +165,15 @@ def topology(obj_name):
             stack.extend(o for e in v.link_edges for o in [e.other_vert(v)] if o.index in unvisited)
     bm.free(); obj.evaluated_get(deps).to_mesh_clear()
     quad_frac = quads / faces if faces else 0.0
-    clean = (nonman == 0 and islands == 1)
+    clean = (nonman == 0 and islands == 1 and loose_verts == 0 and degenerate == 0 and not negative_scale)
     score = round(quad_frac * (1.0 if clean else 0.5), 4)
     return {"score": score, "faces": faces, "tris": tris, "quads": quads, "ngons": ngons,
             "quad_fraction": round(quad_frac, 4), "non_manifold_edges": nonman,
             "boundary_edges": boundary, "islands": islands,
             "valence_hist": dict(sorted(valence.items())), "sliver_edges": slivers,
-            "mean_edge_len": round(mean_len, 4)}
+            "mean_edge_len": round(mean_len, 4),
+            "loose_vertices": loose_verts, "degenerate_faces": degenerate,
+            "negative_scale": negative_scale, "empty_material_slots": empty_slots, "clean": clean}
 
 
 # ---------------------------------------------------------------- symmetry ----
@@ -258,3 +265,27 @@ def compare_to_last(sc, path=None):
                 regressions.append(k)
     return {"vs": prev["model"], "composite_delta": round((sc["composite"] or 0) - (prev["composite"] or 0), 4),
             "deltas": deltas, "regressions": regressions}
+
+
+# ---------------------------------------------------------- regression gate ----
+def gate(sc, path=None, tolerance=0.005, raise_on_fail=False):
+    """Invariant, not opinion: a new version may not lower any component or the
+    composite by more than `tolerance` versus the last logged scorecard of the
+    SAME model. Adopted from the Astra Studio smoke test's strictly-increasing
+    assertions. Returns {"ok", "regressions", "vs"}; optionally raises."""
+    hist = [h for h in history(path) if h.get("model") == sc.get("model")] or history(path)
+    if not hist:
+        return {"ok": True, "first_entry": True}
+    prev = hist[-1]
+    regressions = []
+    for k, v in sc["components"].items():
+        pv = prev.get("components", {}).get(k)
+        if v is not None and pv is not None and (pv - v) > tolerance:
+            regressions.append({"component": k, "was": pv, "now": v})
+    if sc.get("composite") is not None and prev.get("composite") is not None \
+            and (prev["composite"] - sc["composite"]) > tolerance:
+        regressions.append({"component": "composite", "was": prev["composite"], "now": sc["composite"]})
+    out = {"ok": not regressions, "regressions": regressions, "vs": prev.get("model"), "vs_ts": prev.get("ts")}
+    if raise_on_fail and regressions:
+        raise AssertionError(f"regression gate failed: {regressions}")
+    return out

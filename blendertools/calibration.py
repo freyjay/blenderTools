@@ -166,8 +166,48 @@ def test_bisect_guard():
     return {"pass": abs(v - 0.5) < 1e-3, "root": round(v, 5)}
 
 
-def run_all():
-    results = {"bisect_guard": test_bisect_guard()}
+def test_plan():
+    """plan.py invariants: expressions evaluate, the detail gate filters, the
+    hash is content-based (stable across identical plans, different across
+    detail levels), and build() produces exactly the resolved parts."""
+    from . import plan
+    pl = plan.new("bc_plan_test", detail=3)
+    pl["parameters"] = {"r": {"default": 0.5, "min": 0.1, "max": 2.0}}
+    plan.add_part(pl, "bc_p_a", "probe", "sphere", location=(0, 2, 0), scale=("r", "r*2", "r+0.5"))
+    plan.add_part(pl, "bc_p_b", "probe", "sphere", location=(1, 2, 0), scale=(0.2, 0.2, 0.2), min_detail=5)
+    r3 = plan.resolve(pl)
+    r3b = plan.resolve(pl)
+    pl5 = dict(pl, detail=5)
+    r5 = plan.resolve(pl5)
+    checks = {
+        "expression": abs(r3["parts"][0]["scale"][1] - 1.0) < 1e-9 and abs(r3["parts"][0]["scale"][2] - 1.0) < 1e-9,
+        "gate_filters_at_3": len(r3["parts"]) == 1,
+        "gate_opens_at_5": len(r5["parts"]) == 2,
+        "hash_stable": r3["sha256"] == r3b["sha256"],
+        "hash_differs_by_detail": r3["sha256"] != r5["sha256"],
+    }
+    rep = plan.build(r3, clear_first=False, fuse=False)
+    checks["build_count"] = rep["parts_built"] == 1
+    checks["provenance"] = rep["plan_sha256"] == r3["sha256"]
+    for nm in ("bc_p_a", "bc_p_b"):
+        o = bpy.data.objects.get(nm)
+        if o:
+            bpy.data.objects.remove(o, do_unlink=True)
+    bad = False
+    try:
+        plan.expression("__import__('os').system('x')", {})
+    except ValueError:
+        bad = True
+    checks["rejects_code"] = bad
+    return {"pass": all(checks.values()), "checks": checks}
+
+
+def run_all(write_report=True):
+    """Run every ground-truth test. Returns the results AND, by default, writes a
+    timestamped evidence report (platform, versions, every number) to
+    config.CALIBRATION_REPORT_DIR -- a pass is a claim; a report is evidence."""
+    import json, os, platform, time
+    results = {"bisect_guard": test_bisect_guard(), "plan": test_plan()}
     with isolated_scene():
         for name, fn in (("torus", test_torus), ("pyramid", test_pyramid), ("occlusion", test_occlusion)):
             _clear()
@@ -175,5 +215,18 @@ def run_all():
                 results[name] = fn()
             except Exception as e:  # a crash is a failure, not an abort
                 results[name] = {"pass": False, "error": f"{type(e).__name__}: {e}"}
-    return {"passed": all(v.get("pass") for v in results.values()), "results": results,
-            "assumptions": results.get("pyramid", {}).get("assumptions", [])}
+    out = {"passed": all(v.get("pass") for v in results.values()), "results": results,
+           "assumptions": results.get("pyramid", {}).get("assumptions", []),
+           "evidence": {"package": config.VERSION_STR, "blender": bpy.app.version_string,
+                        "platform": f"{platform.system()} {platform.machine()}",
+                        "headless": bpy.app.background, "ts": time.strftime("%Y-%m-%dT%H:%M:%S")},
+           "not_verified": ["live-scene measurement on a real model (this suite uses known primitives)",
+                            "reference fidelity (see gauge.scorecard)"]}
+    if write_report:
+        d = os.path.expanduser(config.CALIBRATION_REPORT_DIR)
+        os.makedirs(d, exist_ok=True)
+        path = os.path.join(d, f"calibration-{out['evidence']['ts'].replace(':', '')}.json")
+        with open(path, "w") as f:
+            json.dump(out, f, indent=2, default=str)
+        out["report_path"] = path
+    return out

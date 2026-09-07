@@ -43,6 +43,8 @@ blendertools/
                   fuse_group (fuse ONE layer, stash the parts), witness checks
   recipes.py      voxel_fuse ladder · quadriflow (introspects the operator's real params) ·
                   hair_pods (lying mode) · hero_spikes (standing mode)
+  plan.py         data-before-code: declarative specs, safe expressions, detail gate,
+                  content hash, build() with provenance report, capture() from scene
   gauge.py        output quality as tracked numbers: fit · silhouette IoU · surface ·
                   topology · symmetry → composite, JSONL log, regression detection
   calibration.py  ground-truth suite: torus, pyramid, occlusion, bisect guard — in an
@@ -111,7 +113,7 @@ After editing any module: `bt.reload()`.
 
 ## Status
 
-**v0.5.0 — working, experimental, honest about its ceiling.** Models are sphere-blockout plus voxel fusion; the topology gap (quad flow, subdivision-ready meshes) is the current frontier, and `recipes.quadriflow` is the first step. The calibration suite passes 4/4. The gauge system exists but has one baseline logged. The tooling grew inside one long collaborative session between a human teaching calibration the way an atelier teaches drawing and an agent building the instruments it was being taught to use — the ledger reads accordingly.
+**v0.6.0 — working, experimental, honest about its ceiling.** Models are sphere-blockout plus voxel fusion; the topology gap (quad flow, subdivision-ready meshes) is the current frontier, and `recipes.quadriflow` is the first step. The calibration suite passes 4/4. The gauge system exists but has one baseline logged. The tooling grew inside one long collaborative session between a human teaching calibration the way an atelier teaches drawing and an agent building the instruments it was being taught to use — the ledger reads accordingly.
 
 ## Credits
 

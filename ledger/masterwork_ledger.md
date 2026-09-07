@@ -225,3 +225,12 @@ max jump 0.204. Two real, correctly-diagnosed corrections needed (vs v1's
 ~10 and v2's multi-bug journey through false leads). The engine calibration
 paid for itself: no wasted loops chasing instrument lies this time, only
 genuine residual geometry, found and fixed efficiently.
+
+## v0.6.0 -- rigor adopted from the Astra Blender Studio study
+Studied the competitor package (44 files). It cannot model organic subjects at
+all and has no perception layer; it is ahead on engineering discipline. Adopted:
+plan-before-build with content hashing (plan.py), process-depth detail profiles,
+doctor() patch-presence check + explicit not-verified fields, calibration
+evidence reports written to ledger/calibration/, mesh-sanity gauge fields, and
+gauge.gate() as a hard regression invariant. Declined: CAD/DXF, job queue,
+community bridge, and aspirational detail-level names.
