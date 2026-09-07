@@ -306,3 +306,15 @@ unseen back-3/4 reference it plateaus at 0.85 vs 0.66-0.71 for the plain hull an
 Two instrument lessons on the way: the profile image is the model's LEFT view
 (mirror test 0.97 vs 0.66), and 'bbox-normalized' must say square vs per-axis.
 Open: thin-region meshing (9 islands), concavities, hair/skin colour layers.
+
+
+## 2026-09-07 -- curves before renders
+The elliptical hull scored 0.95+ on silhouettes and looked like melted ice cream.
+The human's rule: learn the math of the reference's curves first (soft/sharp/angle/
+where) and make the views agree before rendering. Reference curve spec extracted
+(refs/boy/curves.json) from bmesh boundary outlines; front and profile agree with
+each other (neck minimum z=0.894 in both). Instrument finding: curvature means at
+128 px cannot tell crisp from melted (30.1 vs 28.8); only the extremes can (177 vs
+150 convex). Curvature needs >=512-px outlines and feature-list comparison. Three
+of my own tools failed on the way (hand-written faces, a Moore tracer, bmesh
+indices) and were replaced by proven ones; the reference numbers stand.

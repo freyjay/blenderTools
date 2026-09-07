@@ -80,12 +80,17 @@ Status marks: `[x]` built and tested · `[~]` built, never executed · `[!]` bui
 - [ ] v0.9.1: adopt Studio's parented-transform and loose-linework checks, credited — *agent*
 - [ ] Rewrite `SKILL.md` + `toolkit-api.md` for v0.9; re-upload the skill — *agent + you*
 - [ ] Send `Mac-Results-Studio-v03.zip` (`d49fe0bd…`) and the v0.9 reply letters to the Astra team — *you*
-- [ ] Improvement loops on the generated mesh: measure → correct as plan edits → gauge → gate → approve, each one in the ledger — *agent*
+- [ ] **Curve gate** (`contours` module): outline → turning angles → feature list per view; agreement metric vs `refs/boy/curves.json`; cross-view landmark agreement; render only after the gate passes — *agent*
+- [ ] Elliptical-hull base mass with hair/skin colour layers, no over-smoothing, features as parts at the manifest ratios — measured through the curve gate before any render — *agent*
+- [ ] Improvement loops: measure → correct as plan edits → gauge + curve gate → approve, each one in the ledger — *agent*
 - [ ] Topology: quadriflow + subdivision on the generated mesh at detail 4–5 — *agent*
 - [ ] v0.9.1 also: `eye._targets` → `scene.objects` (context-independent after `open_mainfile`); update calibration `not_verified` text for run_isolated / live transport — *agent*
 - [ ] Second subject from a plan (the cat) to prove generality — *agent*
 - [ ] Fresh-agent test: new session, `START-HERE.md` only, no help — *you*
 - [ ] Housekeeping: dedupe `INSTALL.md`; archive `freyjay/blender_connect`; private repo for `internal/` — *you*
+
+## Curves before renders — 2026-09-07
+The hull test produced good silhouette numbers and a render that looked like melted ice cream: silhouette IoU is outline-only and cannot see softness. New rule (from the human): learn the reference's curves first — how soft, how sharp, what angle, where — and require the model's views to agree with the reference and with each other **before** anything is rendered. `refs/boy/curves.json` holds the boy's curve spec (crest spike 100–138°, pod scallop −55..−99°, hairline notch at z 0.35, brow +49° at 0.48, nose tip +55..+72° at 0.69, neck minimum at 0.894 in both views). Instrument finding: curvature means at 128 px are pixel-noise dominated; use ≥512-px outlines and compare feature lists, not means.
 
 ## Reference vs canon — 2026-09-07
 The boy reference's own eye span is **0.387** of ear-inclusive width (`refs/boy/manifest.json`). Canon default: 0.43. boy_v3 measured 0.389 — it matched the character and the fit score penalized it. Canon values in `config.py` are defaults for *a* face, not *this* face; the gauge must take ratios from the reference manifest.

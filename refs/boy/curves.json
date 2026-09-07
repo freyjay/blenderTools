@@ -1,0 +1,80 @@
+{
+  "date": "2026-09-07",
+  "method": "outline via bmesh boundary edges of the 256-px silhouette face grid; 400 arc-length samples; turning angle over +-4 samples; + convex, - concave; z = 0 at figure top, 1 at bottom",
+  "reference_front": {
+    "contour_len_over_H": 3.282,
+    "mean_abs_turn": 20.3,
+    "p90_abs_turn": 52.4,
+    "soft_fraction_lt8": 0.432,
+    "n_sharp_ge40": 47,
+    "features": [
+      {
+        "z": 0.02,
+        "what": "crest tip",
+        "turn": "100..138 convex"
+      },
+      {
+        "z": 0.05,
+        "what": "pod tips",
+        "turn": "~49 convex"
+      },
+      {
+        "z": "0.08-0.12, 0.21, 0.35",
+        "what": "pod notches (scallop)",
+        "turn": "-55..-99 concave"
+      }
+    ]
+  },
+  "reference_profile": {
+    "contour_len_over_H": 3.354,
+    "mean_abs_turn": 18.7,
+    "p90_abs_turn": 51.4,
+    "soft_fraction_lt8": 0.485,
+    "n_sharp_ge40": 43,
+    "features": [
+      {
+        "z": 0.0,
+        "what": "crest",
+        "turn": "44..72 convex"
+      },
+      {
+        "z": 0.35,
+        "what": "hairline/forehead notch",
+        "turn": "-58..-99 concave"
+      },
+      {
+        "z": 0.48,
+        "what": "brow ridge",
+        "turn": "+49 convex"
+      },
+      {
+        "z": "0.68-0.70",
+        "what": "nose tip (u=0.985, the extreme)",
+        "turn": "+55..+72 convex"
+      },
+      {
+        "z": 0.72,
+        "what": "under-nose notch",
+        "turn": "-51 concave"
+      }
+    ]
+  },
+  "cross_view_agreement": {
+    "neck_min_z": {
+      "front": 0.894,
+      "profile": 0.894
+    },
+    "neck_width_over_H": {
+      "front": 0.235,
+      "profile_depth": 0.133
+    },
+    "eye_line_front": 0.605,
+    "profile_brackets_eye": "brow 0.48 .. nose 0.69",
+    "verdict": "front and profile agree; references are a consistent turnaround"
+  },
+  "instrument_finding": {
+    "at_128px": "mean |turn| is pixel-staircase dominated (ref 30.1 vs melted hull 28.8); only tails discriminate (max convex 177 vs 150 front, 175 vs 116 profile; min concave -160 vs -129, -131 vs -90)",
+    "rule": "measure curvature on >=512-px outlines rendered through the calibrated camera (or sub-pixel edges), turning window ~2% of contour length; compare feature lists (z, kind, magnitude), not means"
+  },
+  "gate": "a model may be rendered for human review only after its per-view feature lists match the reference spec within tolerance (z +-0.02, kind, magnitude class) AND its own views agree on shared landmarks (neck row, eye line) the way the references do"
+}
