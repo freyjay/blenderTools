@@ -8,6 +8,8 @@
 
 **New agent or new session?** Read [`START-HERE.md`](START-HERE.md) first.
 
+**Where things stand:** [`STATUS.md`](STATUS.md) is the working checklist; [`docs/structure.html`](docs/structure.html) is the same map drawn for visitors (open it in a browser).
+
 ## Why this exists
 
 Blender's official MCP add-on lets an LLM execute Python inside Blender. It also offers screenshots — but over the official add-on's screenshot tool, images are budgeted, downscaled, and arrive too degraded for the agent to read anything but the simplest scene. The human sees a crisp render; the agent sees mush.

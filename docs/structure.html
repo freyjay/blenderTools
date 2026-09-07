@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>blenderTools — the calibration harness</title>
+<style>
+  :root{
+    --paper:#ffffff; --paper-2:#f4f6f9; --ink:#1d2433; --ink-2:#5b6472; --rule:#d9dee5;
+    --red:#DB2B39; --amber:#F3A712; --navy:#033F63; --teal:#00AFB9;
+    --mono:"IBM Plex Mono","SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--paper-2);color:var(--ink);font:13px/1.5 var(--mono)}
+  button{font:inherit;color:inherit;background:none;border:1.5px solid var(--ink);padding:5px 12px;cursor:pointer;letter-spacing:.06em}
+  button:hover,button:focus-visible{background:var(--ink);color:var(--paper);outline:none}
+  button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+  .app{display:grid;grid-template-rows:56px 1fr 28px;grid-template-columns:250px 1fr 470px;height:100vh}
+  /* top bar */
+  .top{grid-column:1/-1;display:flex;align-items:stretch;border-bottom:1.5px solid var(--ink);background:var(--paper)}
+  .stat{padding:8px 16px;border-right:1px solid var(--rule);display:flex;flex-direction:column;justify-content:center;white-space:nowrap}
+  .stat small{font-size:10px;letter-spacing:.14em;color:var(--ink-2)}
+  .stat b{font-weight:500;font-size:15px}
+  .stat.grow{flex:1;border-right:none}
+  .actions{display:flex;gap:8px;align-items:center;padding:0 14px}
+  /* sidebar */
+  .side{border-right:1.5px solid var(--ink);overflow:auto;padding:10px 8px 20px;background:var(--paper)}
+  .side h4{margin:16px 6px 6px;font-weight:500;font-size:10px;letter-spacing:.14em;color:var(--ink-2)}
+  .item{display:grid;grid-template-columns:20px 1fr auto auto;gap:6px;align-items:center;border:1.5px solid var(--ink);padding:6px 8px;margin:6px 0;cursor:pointer;background:transparent}
+  .item.sub{margin-left:14px;border-width:1px}
+  .item:hover,.item.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .item .k{font-size:10px;color:inherit;opacity:.65}
+  .item .n{font-size:12px;letter-spacing:.02em}
+  .item .c{font-size:11px;opacity:.7}
+  .item .g{font-size:11px;width:18px;height:18px;line-height:18px;text-align:center;border-radius:50%;color:#fff}
+  .item .g[data-s=limited]{color:var(--ink)}
+  .legend{margin:12px 6px 4px;font-size:11px;color:var(--ink-2);line-height:1.9;border:1px solid var(--rule);padding:8px 10px;background:var(--paper-2)}
+  .legend b{display:block;font-weight:500;color:var(--ink);letter-spacing:.12em;font-size:10px;margin-bottom:4px}
+  .legend .sw{display:inline-block;width:13px;height:13px;border-radius:50%;vertical-align:-2px;margin-right:8px}
+  .legend .ln{display:inline-block;width:22px;border-top:2px solid var(--navy);vertical-align:3px;margin-right:8px}
+  .legend .ln.d{border-top:1.5px dashed #9aa3ad}
+  /* canvas */
+  .stage{position:relative;overflow:hidden;background:var(--paper-2)}
+  svg{width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+  svg.drag{cursor:grabbing}
+  .zoom{position:absolute;right:14px;top:14px;display:flex;flex-direction:column;gap:6px}
+  .zoom button{width:32px;height:32px;padding:0}
+  .hint{position:absolute;left:14px;bottom:10px;font-size:11px;letter-spacing:.1em;color:var(--ink-2)}
+  /* right panel */
+  .panel{border-left:1.5px solid var(--ink);display:flex;flex-direction:column;min-width:0;background:var(--paper)}
+  .tabs{display:flex;border-bottom:1.5px solid var(--ink)}
+  .tabs button{flex:1;border:none;border-right:1px solid var(--rule);padding:12px 6px;font-size:11px;letter-spacing:.14em}
+  .tabs button:last-child{border-right:none}
+  .read{padding:22px 26px 40px;overflow:auto;line-height:1.65}
+  .read .eyebrow{font-size:10px;letter-spacing:.16em;color:var(--ink-2)}
+  .read h1{font-weight:500;font-size:24px;letter-spacing:-.01em;margin:6px 0 4px}
+  .read .sub{color:var(--ink-2);font-size:12px;margin-bottom:22px}
+  .read h5{font-size:10px;letter-spacing:.16em;color:var(--ink-2);font-weight:500;margin:22px 0 8px}
+  .read p{margin:0 0 12px;max-width:62ch}
+  .read mark{background:var(--navy);color:#fff;padding:0 4px}
+  .read ul{margin:0 0 12px;padding-left:18px;max-width:62ch}
+  .read li{margin:3px 0}
+  .read code{background:var(--paper-2);padding:0 4px}
+  .fn{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:12px;max-width:62ch}
+  .fn .st{width:16px;height:16px;line-height:16px;text-align:center;border-radius:50%;color:#fff;font-size:10px;margin-top:2px}
+  .fn .st[data-s=limited]{color:var(--ink)}
+  .check{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--rule);cursor:pointer}
+  .check input{margin-top:4px;accent-color:var(--navy)}
+  .check.done .t{text-decoration:line-through;opacity:.55}
+  .check .who{font-size:10px;letter-spacing:.1em;color:var(--ink-2);white-space:nowrap;margin-left:auto}
+  .status-line{display:inline-block;color:#fff;padding:3px 10px;font-size:11px;letter-spacing:.08em;margin:2px 0 12px}
+  .status-line[data-s=limited]{color:var(--ink)}
+  .foot{grid-column:1/-1;background:var(--paper);border-top:1.5px solid var(--ink);font-size:11px;letter-spacing:.1em;color:var(--ink-2);padding:0 14px;display:flex;align-items:center;justify-content:space-between}
+  /* svg */
+  .blk{cursor:pointer}
+  .blk text{font-family:var(--mono);font-size:11px;fill:var(--ink);pointer-events:none}
+  .blk.hi .top,.blk.on .top{stroke-width:3}
+  .blk.dim{opacity:.3}
+  .loop{fill:none;stroke:var(--navy);stroke-width:2.2}
+  .loop.thin{stroke:#9aa3ad;stroke-width:1.2;stroke-dasharray:4 4}
+  .node{fill:var(--navy)}
+  .grid line{stroke:#e6eaef;stroke-width:1}
+  .ring{fill:none;stroke:var(--navy);stroke-width:2.2}
+  .cir{cursor:pointer}
+  .cir .body{stroke:#fff;stroke-width:2}
+  .cir.hi .body,.cir.on .body{stroke:var(--ink);stroke-width:3.5}
+  .cir text{font-family:var(--mono);font-size:11px;fill:#fff;pointer-events:none}
+  .cir text.name{fill:var(--ink)}
+  .cir.dim{opacity:.3}
+  .sat circle{fill:#fff;stroke-width:1.6}
+  .sat line{stroke:#9aa3ad;stroke-width:1}
+  .sat text{font-family:var(--mono);font-size:8.5px;fill:var(--ink);pointer-events:none}
+  .ctr{font-family:var(--mono);fill:var(--ink-2);text-anchor:middle}
+  .lab{font-family:var(--mono);font-size:10px;letter-spacing:.14em;fill:var(--ink-2)}
+  @media (max-width:1100px){.app{grid-template-columns:200px 1fr 360px}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="stat"><small>REPOSITORY</small><b>freyjay/blenderTools · v0.9.0</b></div>
+    <div class="stat"><small>TESTS</small><b>29 / 29 · isolated process</b></div>
+    <div class="stat"><small>MODULES</small><b>12 in package</b></div>
+    <div class="stat"><small>AUDIT FINDINGS</small><b>25 closed · 2 rounds</b></div>
+    <div class="stat"><small>MODELS ON RECORD</small><b>3 — none from a plan yet</b></div>
+    <div class="stat grow"><small>OPEN ITEMS</small><b id="openCount">—</b></div>
+    <div class="actions">
+      <button id="btnView" aria-pressed="true">CIRCLE VIEW</button>
+      <button id="btnFlow" aria-pressed="false">▸ RESUME THE FLOW</button>
+      <button id="btnStep">TRACE ONE STEP</button>
+      <button id="btnReset">RESET VIEW</button>
+    </div>
+  </div>
+
+  <nav class="side" id="side" aria-label="Components"></nav>
+
+  <div class="stage">
+    <svg id="svg" viewBox="0 0 1200 780" role="img" aria-label="Isometric map of blenderTools">
+      <g id="world"></g>
+    </svg>
+    <div class="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button></div>
+    <div class="hint">CLICK TO SELECT · HOVER TO READ · DRAG TO PAN · SCROLL TO ZOOM · ← → TRACE THE LOOP · CIRCLE / ISOMETRIC TOGGLE TOP RIGHT</div>
+  </div>
+
+  <aside class="panel">
+    <div class="tabs" role="tablist">
+      <button role="tab" data-tab="does" aria-pressed="true">WHAT IT DOES</button>
+      <button role="tab" data-tab="built" aria-pressed="false">HOW IT'S BUILT</button>
+      <button role="tab" data-tab="cond" aria-pressed="false">CONDITION</button>
+    </div>
+    <div class="read" id="read"></div>
+  </aside>
+
+  <div class="foot"><span>COLOUR = STATUS · TEAL BUILT AND TESTED · NAVY BUILT, NEVER EXECUTED · AMBER KNOWN LIMITATION · RED DASHED MISSING OR BLOCKED</span><span>docs/structure.html · keep this current when the code changes</span></div>
+</div>
+
+<script>
+/* ------------------------------------------------------------------ data */
+// status: tested | untested | limited | missing
+const NODES = [
+ // THE CALIBRATION LOOP
+ {id:'R',letter:'R',name:'Reference',sec:'loop',x:0.5,y:5,w:2.6,d:2.2,h:.45,status:'limited',
+  fns:[['config.py canon values (eye 0.50, brow 0.63, nose 0.38, mouth 0.25, ear 0.49, W/H 0.63…)','tested'],['refs.BOY_FRONT_SPANS_30 digitized front grid','tested'],['refs.BOY_PROFILE_LANDMARKS','tested'],['registration manifest with uncertainty','missing']],
+  does:'What the model is measured against: canon face fractions with provenance notes, and reference silhouettes digitized to a 30×30 grid. Rule 10 of the doctrine: consult the reference fresh every loop; derived targets expire.',
+  built:'Plain data in <code>config.py</code> and <code>refs.py</code>. Every value carries a note on where it came from and how confident it is. No image is read at runtime; the digitization happened once by hand.',
+  cond:['No uncertainty attached to reference grids (both audits asked for it).','Only one subject digitized (the boy); the cat used ratios only.']},
+ {id:'P',letter:'P',name:'Plan',sec:'loop',x:3,y:1.2,w:3,d:3,h:.5,status:'untested',
+  fns:[['plan.new / add_layer / add_part','tested'],['plan.expression (ast whitelist, no eval)','tested'],['plan.resolve → detail gate + sealed profile + sha256','tested'],['plan.verify (recompute hash)','tested'],['plan.build → geometry + provenance report','tested'],['plan.capture (live scene → plan)','untested']],
+  does:'Data before code. A model exists as a hashed JSON spec before it exists as geometry, so any version can be rebuilt from its plan instead of from prose. Parts belong to layers with continuity contracts, so a plan is also a mesh_mind graph.',
+  built:'Adopted from the Astra Studio study (plan/build split, ast-whitelisted expressions). <code>resolve()</code> deep-copies the detail profile and hashes everything the builder consumes; <code>build()</code> refuses a plan whose hash no longer matches. Created objects are tracked by reference and tagged with model and build ids.',
+  cond:['boy_v3 has never been captured as a plan — it still exists only as prose and a .blend.','plan.capture() records transforms exactly but shapes approximately; never executed on a real model.']},
+ {id:'B',letter:'B',name:'Build',sec:'loop',x:7,y:.5,w:1.8,d:1.8,h:1.2,status:'untested',
+  fns:[['recipes.fuse_objects — staged, ownership-checked','tested'],['recipes.voxel_fuse (name wrapper)','tested'],['recipes.quadriflow','untested'],['recipes.hair_pods','untested'],['recipes.hero_spikes','untested'],['detail profiles 4 and 5','untested']],
+  does:'Turns parts into a surface. Voxel fusion of one continuity layer at a time (parts stay stashed for later adjustment), then — not yet exercised — quad remeshing and hair pods.',
+  built:'Fusion is staged: validate → build under a staging name → only then swap out the prior result. A failed re-fuse leaves the old result untouched (follow-up audit P1-4). Quadriflow introspects the operator’s real parameter names instead of guessing.',
+  cond:['quadriflow(), hair_pods(), hero_spikes() were written in v0.5 and have never run. Doctrine 15 says every public function gets a call test.','Detail profiles 4–5 (refined, finished) never built.']},
+ {id:'E',letter:'E',name:'Eye',sec:'loop',x:10.2,y:1.4,w:1.6,d:1.6,h:1.4,status:'tested',
+  fns:[['eye.render_ascii (id · edges · depth · shade)','tested'],['eye.scanline','tested'],['eye.cross_section','tested'],['frame validation (typo raises)','tested']],
+  does:'Text-based vision. Ray-cast renders expressed as characters — object IDs, silhouette edges, depth ramps, shading — because text always survives the MCP transport and screenshots do not.',
+  built:'Casts through <code>cast.Caster</code> (Stage B): per-selection BVH trees in world space, depth-rebased origins, explicit selected/visible policy. Window (center/extent) can be locked so renders from different moments are comparable.',
+  cond:[]},
+ {id:'S',letter:'S',name:'Senses',sec:'loop',x:11.2,y:3.4,w:1.8,d:1.8,h:1.6,status:'limited',
+  fns:[['senses.proportions','tested'],['senses.contour_angles','tested'],['senses.turntable','tested'],['senses.render_hardness','tested'],['senses.silhouette (sub-pixel bisect)','tested'],['senses.occupancy_grid (window lock, n∈[4,140])','tested'],['senses.cavity_probe + enclosure_check','limited']],
+  does:'Measurement layered on the eye: proportions, contour angles, rotation continuity, surface hardness, sub-pixel silhouettes, occupancy grids for IoU, and interior depth probes.',
+  built:'Every sense casts through the same Caster, so occupancy and silhouette agree about occlusion by construction. All entry points validate frames the same way (cast.resolve_frame).',
+  cond:['cavity_probe reports containment: not_verified — there is no leak-path check (a leaking vessel passes every radial sample).']},
+ {id:'M',letter:'M',name:'Measure',sec:'loop',x:10,y:5.6,w:1.6,d:1.6,h:1.2,status:'tested',
+  fns:[['measure.edge_bisect (raises on swapped args)','tested'],['measure.width_at (frame required, sampled_z, out-of-range raises)','tested'],['measure.parts_at_height','tested'],['measure.attribute_point (post-fusion)','untested'],['measure.owner_at (visible policy)','untested']],
+  does:'Guarded rulers. The bisection invariant that once converged silently in the wrong region is enforced; asking for a height the object never reaches raises instead of returning the nearest row.',
+  built:'Attribution after fusion uses stashed-part bounding boxes, because a ray only ever returns the fused skin.',
+  cond:['attribute_point and owner_at are not in the suite’s call test.']},
+ {id:'G',letter:'G',name:'Gauge',sec:'loop',x:7,y:7.8,w:3,d:2.6,h:.55,status:'untested',
+  fns:[['gauge.reference_fit','tested'],['gauge.silhouette_fit (frame required, reference_id)','tested'],['gauge.surface / topology / symmetry','tested'],['gauge.scorecard (id, weights, scope, compat)','untested'],['gauge.gate (approved baseline only; else unverified)','tested'],['gauge.approve / reject / log','tested']],
+  does:'Output quality as tracked numbers. A scorecard records what was measured and how; the gate compares it to the last approved compatible baseline and refuses to call “no baseline” a pass.',
+  built:'Logging never promotes; only <code>approve()</code> creates a baseline (follow-up audit P2-6). Missing components count as zero, never as renormalized weights. Compatibility covers model, weights, coverage, scope and reference ids.',
+  cond:['No scorecard has ever been taken on a real model.','No approved baseline exists — the gate has nothing to enforce yet.']},
+ {id:'L',letter:'L',name:'Ledger',sec:'loop',x:3.4,y:8.2,w:1.6,d:1.6,h:1.5,status:'tested',
+  fns:[['ledger/masterwork_ledger.md (every loop, honestly)','tested'],['ledger/gauge_log.jsonl','tested'],['ledger/calibration/*.json evidence reports','tested'],['RELEASES.md (tag, archive, sha256)','tested']],
+  does:'Institutional memory. Every loop, every failure, every evidence report with commit, platform and what was not verified. A committed report always shows the parent commit and dirty_tree: true — by construction.',
+  built:'Append-only text and JSONL under <code>config.state_dir()</code>: $BLENDERTOOLS_HOME → repo checkout → ~/.blendertools.',
+  cond:[]},
+ // SUPPORTING
+ {id:'C',letter:'C',name:'Cast',sec:'support',x:13.4,y:1,w:1.5,d:1.5,h:1.1,status:'tested',
+  fns:[['cast.Caster (selected | visible)','tested'],['depth-rebased origins','tested'],['cast.resolve_frame','tested']],
+  does:'The one casting policy. Rays hit only the selected objects (full projection) or the first visible surface — named explicitly, never implied.',
+  built:'BVH per object from the evaluated mesh (modifiers included) in world space. Origins keep their lateral position and move behind the target’s depth bounds, so a subject at y=−100 measures like one at y=2.',
+  cond:[]},
+ {id:'K',letter:'K',name:'Calibration',sec:'support',x:13.6,y:5.4,w:1.8,d:1.8,h:2.2,status:'limited',
+  fns:[['5 known-geometry tests (torus, pyramid, occlusion, bisect, plan)','tested'],['23 audit regression tests','tested'],['scene-integrity assertion + planted decoys','tested'],['preflight (refuses non-Object Mode)','tested'],['run_isolated (factory-startup subprocess)','untested'],['parented transforms · loose linework (from Studio)','missing']],
+  does:'Ground truth for the instruments. Known shapes with exactly known answers, plus one regression test per reproduced audit finding, run inside an isolation boundary that asserts the user’s scene is unchanged.',
+  built:'Fixtures are owned by pointer diff, never active_object. Selection, active, mesh and collection counts are restored and asserted. The runner exits nonzero on any failure.',
+  cond:['run_isolated() itself has never been executed (the release script ran its own equivalent).','Two Studio checks to adopt with credit: evaluated-parent-world-transform, loose-linework-not-misreported-as-surface.','Sculpt/Pose modes and multi-scene files refused but not individually tested.']},
+ {id:'N',letter:'N',name:'Mesh mind',sec:'support',x:6.4,y:4.6,w:1.5,d:1.5,h:1,status:'tested',
+  fns:[['mesh_mind.declare_graph','tested'],['mesh_mind.overlap_candidates (broad-phase only)','tested'],['mesh_mind.island_census (the proof)','tested'],['mesh_mind.fuse_group → staged fuse_objects','tested']],
+  does:'Think as a mesh, by parts. Declares which surfaces must be continuous and where breaks belong, and proves both after fusion.',
+  built:'AABB overlap is labeled what it is — a candidate test; island_census after fusion is the proof (audit P2-9).',
+  cond:[]},
+ {id:'F',letter:'F',name:'Config',sec:'support',x:.4,y:.6,w:1.5,d:1.5,h:.9,status:'tested',
+  fns:[['canon values with provenance','tested'],['DETAIL_PROFILES 1–5 (process depth, not looks)','tested'],['state_dir(), overrides allow-list','tested'],['GAUGE_ALGO, GAUGE_WEIGHTS, TOL','tested']],
+  does:'Every number the toolkit believes, in one place, each with a note on where it came from. Detail levels describe what the pipeline does, never what the result will look like.',
+  built:'JSON overrides restricted to an allow-list; int profile keys coerced. Writable state resolves outside installed code.',
+  cond:[]},
+ {id:'D',letter:'D',name:'Doctor',sec:'support',x:.4,y:8.6,w:1.5,d:1.5,h:1,status:'tested',
+  fns:[['bt.doctor() — versions, install route, socket-patch marker','tested'],['bt.reload() — dependency-ordered','tested'],['not_verified_by_doctor fields','tested']],
+  does:'Health check that also says what it did not verify. A passing doctor is not permission to trust an untested layer.',
+  built:'Detects the socket patch by a source marker in the live addon file (an addon reinstall silently reverts it). Marker detection, not a transport test.',
+  cond:[]},
+ // TRANSPORT
+ {id:'T',letter:'T',name:'Official Blender MCP',sec:'transport',x:3.2,y:11.8,w:2.4,d:1.8,h:.8,status:'limited',
+  fns:[['execute_blender_code (the channel)','tested'],['socket patch for large payloads (docs/PATCHES.md)','tested'],['screenshots over this transport','limited'],['live round-trip on v0.9','untested']],
+  does:'The phone line. One tool matters: execute_blender_code. Text goes down, text comes back. Screenshots over this add-on arrive too degraded to read — a limit of this transport, not a universal ban on images.',
+  built:'Blender Foundation’s add-on (not the community ahujasid bridge — different protocol, same port, not interchangeable). Patched locally for a sendall truncation; doctor checks the patch is still present.',
+  cond:['No live MCP round-trip has been run since v0.6 — every verification since has been headless.','Large-payload integrity and reconnect behavior untested.']},
+ {id:'Z',letter:'Z',name:'Filesystem MCP',sec:'transport',x:.4,y:11.6,w:1.5,d:1.5,h:.8,status:'missing',
+  fns:[['direct read/write of the repo','missing']],
+  does:'Would let the agent read and edit repo files directly. Not scoped to blenderTools, so every delivery since v0.5 went zip → download → path fix → script.',
+  built:'Nothing to build. One settings change: add ~/Developer/blenderTools to the connector’s allowed directories.',
+  cond:['Not switched on. Two of six deliveries needed a retry because anchors were guessed instead of read.']},
+ {id:'I',letter:'I',name:'Installer',sec:'transport',x:7,y:11.4,w:1.8,d:1.6,h:.8,status:'untested',
+  fns:[['blendertools/install.py (destination-aware, --uninstall, --force)','untested'],['INSTALL.md fresh-download path','tested']],
+  does:'Discovers this Blender’s scripts/modules directory, links the package, verifies the import, refuses to replace a real directory.',
+  built:'Runs inside Blender (bpy.utils.user_resource). Prints one JSON line. Never executed — only the existing-symlink upgrade path has been used.',
+  cond:['Fresh ZIP, fresh clone and install.py itself untested. Windows run requested from the Astra team.']},
+ // METHOD
+ {id:'Q',letter:'Q',name:'Skill',sec:'method',x:5.8,y:-2.6,w:1.8,d:1.5,h:1.2,status:'limited',
+  fns:[['skills/blender-connect/SKILL.md (14 rules + 15, 16)','limited'],['references/toolkit-api.md','limited'],['references/session-lessons.md','tested'],['claude.ai upload (zip)','untested']],
+  does:'The working method — doctrine and loop — that shapes what the agent decides to do next. Runs in the agent’s context, not in Blender.',
+  built:'Authored in v0.5; v0.5 load-pattern note prepended in v0.6. Doctrine 15–16 appended in v0.7.',
+  cond:['Body text is three versions old: knows nothing about plans, the approve lifecycle, caster policies, preflight, or run_isolated. Needs a rewrite, then re-upload.']},
+ {id:'H',letter:'H',name:'Start here',sec:'method',x:8.8,y:-2.4,w:1.6,d:1.4,h:.9,status:'tested',
+  fns:[['START-HERE.md (connect → load → self-test → method → ledger → gauge)','tested'],['README.md (public front door)','tested'],['INSTALL.md','tested'],['CHANGELOG.md · RELEASES.md','tested']],
+  does:'The agent handoff: five short steps, one file each. A fresh session can be connected and self-tested without help.',
+  built:'Kept honest by the audits: “original reproductions fixed” is not “safety contract verified,” and the README says which.',
+  cond:['Never tested by a genuinely fresh agent with no other help (the real proof).','INSTALL.md exists twice (root and package).']},
+ // WHAT COMES OUT
+ {id:'V',letter:'V',name:'Models',sec:'out',x:13.6,y:9,w:2.2,d:1.6,h:.5,status:'limited',
+  fns:[['cat_build.blend (W/H 0.626 vs 0.63)','tested'],['skill_test_mug.blend (cavity carved)','tested'],['boy_v3.blend (2 corrections after calibration)','tested'],['any model built FROM a plan','missing']],
+  does:'What the loop has produced so far. Three subjects, all built by hand-driven loops on the pre-v0.6 instruments. None has a plan, a scorecard, or an approved baseline.',
+  built:'Sphere blockout plus voxel fusion. The topology frontier (quad flow, subdivision-ready) has not been crossed.',
+  cond:['Zero modeling since v0.5 — everything since has been infrastructure and audit response.']},
+ {id:'X',letter:'X',name:'Releases',sec:'out',x:16,y:10.6,w:1.5,d:1.4,h:.9,status:'tested',
+  fns:[['tag v0.9.0 · git archive · sha256 f3f1df6f…','tested'],['RELEASES.md manifest','tested'],['ledger/calibration evidence per release','tested']],
+  does:'Exact commit, reproducible archive, checksum, environment — what the Astra team asked for and what we now ask of them.',
+  built:'Produced by the publish script after the isolated suite passes; nothing commits on a failing run.',
+  cond:[]},
+ {id:'A',letter:'A',name:'Audit responses',sec:'out',x:13.8,y:12,w:2,d:1.5,h:.7,status:'tested',
+  fns:[['AUDIT-RESPONSE.md (public, round 1)','tested'],['internal/AUDIT-RESPONSE-2.md (round 2)','tested'],['internal/RESPONSE-TO-WINDOWS.md (letter, real SHA)','tested']],
+  does:'Finding → status → regression test, in the auditors’ own format. Two rounds: 12 findings, then 13 more found after they reproduced our 20/20 on Windows.',
+  built:'Round 2 lives in a gitignored internal/ folder — correspondence between teams, not public history.',
+  cond:['internal/ is not backed up (gitignored). A private repo would fix that.']},
+ {id:'W',letter:'W',name:'Studio Mac test',sec:'out',x:16.4,y:13,w:1.8,d:1.4,h:.6,status:'tested',
+  fns:[['Mac-Results-Studio-v03.zip · sha256 d49fe0bd…','tested'],['77/77 unit · 20/20 checks · CPU + Metal smoke','tested'],['IoU reproduced digit-for-digit vs Windows','tested']],
+  does:'Our test of their code, mirroring their audit of ours. Fresh dependency install, Metal confirmed as actual device, nothing written outside the workspace — verified, not assumed.',
+  built:'Logs, both smoke reports and four previews, usernames and PNG metadata redacted. Two of their calibration checks queued for adoption, credited.',
+  cond:['Native client activation and setup-rerun intentionally not tested.']},
+];
+
+const SECTIONS = [
+ ['loop','THE CALIBRATION LOOP'],['support','SUPPORTING THE LOOP'],['transport','THE TRANSPORT'],['method','THE METHOD'],['out','WHAT COMES OUT']];
+const LOOP = ['R','P','B','E','S','M','G','L','P'];   // data workflow, in order
+const USERFLOW = ['T','H','D','K','P','B','G','L','X'];   // user workflow, in order
+const GLYPH = {tested:'✓',untested:'◐',limited:'⚠',missing:'✗'};
+const COLOR = {tested:'#00AFB9',untested:'#033F63',limited:'#F3A712',missing:'#DB2B39'};
+const tint=(hex,f)=>{const n=parseInt(hex.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255;const m=v=>Math.round(v+(255-v)*f);return `rgb(${m(r)},${m(g)},${m(b)})`};
+const shade=(hex,f)=>{const n=parseInt(hex.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255;const m=v=>Math.round(v*(1-f));return `rgb(${m(r)},${m(g)},${m(b)})`};
+const WORD  = {tested:'built and tested',untested:'built, never executed',limited:'built, known limitation',missing:'missing or blocked'};
+
+const OPEN = [
+ ['Add ~/Developer/blenderTools to the filesystem connector (removes the zip → download → sed dance)','you'],
+ ['Open Blender with the MCP server; run bt.calibration.run_isolated() once for real','you + agent'],
+ ['One live MCP round-trip of the suite so “live transport” leaves not_verified','agent'],
+ ['bt.plan.capture("boy_v3", …) → plans/boy_v3.json (first hashed spec of a real model)','agent'],
+ ['First gauge.scorecard() on boy_v3; log; approve → first baseline the gate can enforce','agent + you'],
+ ['v0.9.1: call tests for quadriflow, hair_pods, hero_spikes, capture, scorecard, attribute_point, owner_at','agent'],
+ ['v0.9.1: adopt Studio’s parented-transform and loose-linework checks, credited','agent'],
+ ['Rewrite SKILL.md + toolkit-api.md for v0.9 (plans, approve lifecycle, caster policies, preflight); re-upload skill','agent + you'],
+ ['Send Mac-Results-Studio-v03.zip (d49fe0bd…) and the v0.9 reply letters to the Astra team','you'],
+ ['Rebuild the boy from its plan at detail 3 → gauge → approve: first end-to-end loop on the new instruments','agent'],
+ ['Improvement loops: edit plan → build → gauge → gate → approve, each one in the ledger','agent'],
+ ['Topology frontier: quadriflow + subdivision-ready mesh at detail 4–5','agent'],
+ ['Second subject from a plan (the cat) to prove generality','agent'],
+ ['Fresh-agent test: new session, START-HERE.md only, no help','you'],
+ ['Housekeeping: dedupe INSTALL.md; archive freyjay/blender_connect; private repo for internal/','you'],
+];
+
+/* ------------------------------------------------------------- iso draw */
+const U=44, COS=Math.cos(Math.PI/6), SIN=Math.sin(Math.PI/6), OX=560, OY=140;
+const iso=(x,y,z=0)=>[OX+(x-y)*COS*U, OY+(x+y)*SIN*U - z*U];
+const pt=a=>a.map(v=>v.toFixed(1)).join(',');
+const world=document.getElementById('world');
+const NS='http://www.w3.org/2000/svg';
+const el=(t,a={},parent)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(parent)parent.appendChild(e);return e};
+
+function drawGrid(){
+  const g=el('g',{class:'grid'},world);
+  for(let i=-4;i<=20;i++){
+    el('line',{x1:iso(i,-4)[0],y1:iso(i,-4)[1],x2:iso(i,16)[0],y2:iso(i,16)[1]},g);
+    el('line',{x1:iso(-4,i)[0],y1:iso(-4,i)[1],x2:iso(20,i)[0],y2:iso(20,i)[1]},g);
+  }
+  // region labels
+  const lab=(x,y,t)=>{const p=iso(x,y);const e=el('text',{x:p[0],y:p[1],class:'lab'},world);e.textContent=t};
+  lab(4.5,-3.4,'THE METHOD'); lab(-.2,3.2,'THE LOOP'); lab(-.6,10.6,'THE TRANSPORT'); lab(12.8,7.9,'WHAT COMES OUT');
+}
+function drawBlock(n){
+  const {x,y,w,d,h}=n;
+  const g=el('g',{class:'blk',id:'blk-'+n.id,tabindex:0,role:'button','aria-label':n.name},world);
+  const A=iso(x,y,h),B=iso(x+w,y,h),C=iso(x+w,y+d,h),D=iso(x,y+d,h);
+  const A0=iso(x,y+d,0),B0=iso(x+w,y+d,0),C0=iso(x+w,y,0);
+  const missing=n.status==='missing', col=COLOR[n.status];
+  const stroke={stroke:missing?col:'#ffffff','stroke-width':1.4,...(missing?{'stroke-dasharray':'5 4'}:{})};
+  el('polygon',{points:[D,C,B0,A0].map(pt).join(' '),fill:missing?'none':col,...stroke},g);            // left face
+  el('polygon',{points:[C,B,C0,B0].map(pt).join(' '),fill:missing?'none':shade(col,.25),...stroke},g); // right face
+  el('polygon',{points:[A,B,C,D].map(pt).join(' '),fill:missing?'#fff':tint(col,.72),class:'top',stroke:missing?col:col,'stroke-width':1.4,...(missing?{'stroke-dasharray':'5 4'}:{})},g); // top
+  const c=iso(x+w/2,y+d/2,h);
+  const t=el('text',{x:c[0],y:c[1]+4,'text-anchor':'middle'},g); t.textContent=n.letter;
+  const t2=el('text',{x:c[0],y:c[1]-8,'text-anchor':'middle','font-size':'8'},g); t2.textContent=GLYPH[n.status];
+  g.addEventListener('mouseenter',()=>{hover=n.id;render()});
+  g.addEventListener('mouseleave',()=>{hover=null;render()});
+  g.addEventListener('click',()=>{select(n.id)});
+  g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(n.id)}});
+  return g;
+}
+/* ------------------------------------------------------------ circle layout */
+const CX=600, CY=400, RING=205, INNER=100;
+const CIRC = {};
+(function layout(){
+  const loopIds=['R','P','B','E','S','M','G','L'];
+  loopIds.forEach((id,i)=>{const a=-Math.PI/2+i*2*Math.PI/loopIds.length; CIRC[id]={cx:CX+RING*Math.cos(a),cy:CY+RING*Math.sin(a),r:36,a}});
+  const inner=[['F',-Math.PI/2-0.55],['N',-Math.PI/2+0.9],['C',0.05],['K',Math.PI/2-0.35],['D',Math.PI-0.5]];
+  inner.forEach(([id,a])=>{CIRC[id]={cx:CX+INNER*Math.cos(a),cy:CY+INNER*Math.sin(a),r:26,a}});
+  Object.assign(CIRC,{
+    Q:{cx:150,cy:120,r:30}, H:{cx:250,cy:70,r:30},
+    Z:{cx:120,cy:660,r:28}, T:{cx:230,cy:715,r:34}, I:{cx:350,cy:660,r:28},
+    V:{cx:1010,cy:250,r:32}, X:{cx:1100,cy:360,r:28}, A:{cx:1010,cy:470,r:30}, W:{cx:1110,cy:580,r:30}});
+})();
+const short=f=>{let t=f.split(/[ (→—]/)[0].replace(/^(plan|senses|measure|gauge|recipes|mesh_mind|cast|eye|config|refs|bt)\./,'');return t.length>16?t.slice(0,15)+'…':t};
+
+function center(id){
+  if(mode==='circle'){const c=CIRC[id];return [c.cx,c.cy]}
+  const n=NODES.find(k=>k.id===id);return iso(n.x+n.w/2,n.y+n.d/2,n.h)
+}
+function drawLoop(ids,cls){
+  const pts=ids.map(center);
+  if(mode==='circle' && cls===''){
+    el('circle',{cx:CX,cy:CY,r:RING,class:'ring'},world);
+    for(let i=0;i<8;i++){const a=-Math.PI/2+(i+.5)*2*Math.PI/8;const m=[CX+RING*Math.cos(a),CY+RING*Math.sin(a)];
+      el('polygon',{points:[[m[0],m[1]-5],[m[0]+5,m[1]],[m[0],m[1]+5],[m[0]-5,m[1]]].map(pt).join(' '),class:'node'},world)}
+    return;
+  }
+  if(mode==='circle'){
+    let d='';
+    for(let i=0;i<pts.length-1;i++){const p=pts[i],q=pts[i+1];const m=[((p[0]+q[0])/2+CX)/2,((p[1]+q[1])/2+CY)/2];
+      d+=`M${pt(p)} Q${pt(m)} ${pt(q)} `}
+    el('path',{d,class:'loop thin'},world); return;
+  }
+  const path=el('polyline',{points:pts.map(pt).join(' '),class:'loop '+cls},world);
+  if(cls==='')ids.slice(0,-1).forEach((id,i)=>{const p=pts[i],q=pts[i+1];const m=[(p[0]+q[0])/2,(p[1]+q[1])/2];
+    el('polygon',{points:[[m[0],m[1]-5],[m[0]+5,m[1]],[m[0],m[1]+5],[m[0]-5,m[1]]].map(pt).join(' '),class:'node'},world)});
+}
+function drawCircle(n){
+  const c=CIRC[n.id];
+  const g=el('g',{class:'cir',id:'blk-'+n.id,tabindex:0,role:'button','aria-label':n.name},world);
+  const missing=n.status==='missing', col=COLOR[n.status];
+  const body=el('circle',{cx:c.cx,cy:c.cy,r:c.r,class:'body',fill:missing?'#fff':col},g);
+  if(missing){body.setAttribute('stroke',col);body.setAttribute('stroke-dasharray','5 4')}
+  const ink = n.status==='limited' ? '#1d2433' : (missing ? col : '#fff');
+  const t=el('text',{x:c.cx,y:c.cy+4,'text-anchor':'middle',fill:ink},g); t.textContent=n.letter;
+  const t2=el('text',{x:c.cx,y:c.cy-9,'text-anchor':'middle','font-size':'8',fill:ink},g); t2.textContent=GLYPH[n.status];
+  const lab=el('text',{x:c.cx,y:c.cy+c.r+13,'text-anchor':'middle','font-size':'9.5',class:'name'},g); lab.textContent=n.name;
+  g.addEventListener('mouseenter',()=>{hover=n.id;render()});
+  g.addEventListener('mouseleave',()=>{hover=null;render()});
+  g.addEventListener('click',()=>{select(n.id)});
+  g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(n.id)}});
+}
+function drawSatellites(id){
+  world.querySelectorAll('.sat').forEach(e=>e.remove());
+  world.querySelectorAll('.ctr').forEach(e=>e.style.visibility='visible');
+  if(mode!=='circle'||!id)return;
+  const n=NODES.find(k=>k.id===id), c=CIRC[id]; if(!n||!c)return;
+  const inner=['F','N','C','K','D'].includes(id);
+  const base=c.a!==undefined? c.a : Math.atan2(c.cy-CY,c.cx-CX);
+  const out = inner ? base+Math.PI : base;          // inner parts fan toward the centre
+  const spread=Math.min(1.5, 0.5*n.fns.length), R2=inner ? c.r+50 : c.r+72;
+  world.querySelectorAll('.ctr').forEach(e=>e.style.visibility = inner ? 'hidden' : 'visible');
+  const g=el('g',{class:'sat'},world);
+  n.fns.forEach(([f,st],i)=>{
+    const a=out+(n.fns.length===1?0:-spread/2+i*spread/(n.fns.length-1));
+    const x=c.cx+R2*Math.cos(a), y=c.cy+R2*Math.sin(a);
+    el('line',{x1:c.cx+c.r*Math.cos(a),y1:c.cy+c.r*Math.sin(a),x2:x-22*Math.cos(a),y2:y-22*Math.sin(a)},g);
+    el('circle',{cx:x,cy:y,r:22,stroke:COLOR[st],fill:tint(COLOR[st],.88)},g);
+    const t=el('text',{x,y:y-2,'text-anchor':'middle',fill:st==='limited'?'#8a5a00':COLOR[st],'font-weight':'600'},g); t.textContent=GLYPH[st];
+    const t2=el('text',{x,y:y+8,'text-anchor':'middle'},g); t2.textContent=short(f);
+  });
+}
+function drawWorld(){
+  world.innerHTML='';
+  if(mode==='iso'){
+    drawGrid(); drawLoop(USERFLOW,'thin'); drawLoop(LOOP,'');
+    [...NODES].sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(drawBlock);
+  }else{
+    drawLoop(USERFLOW,'thin'); drawLoop(LOOP,'');
+    const lab=(x,y,t)=>{const e=el('text',{x,y,class:'lab'},world);e.textContent=t};
+    lab(110,45,'THE METHOD'); lab(80,600,'THE TRANSPORT'); lab(980,190,'WHAT COMES OUT'); lab(CX-52,CY-60,'SUPPORTING');
+    const c1=el('text',{x:CX,y:CY+8,class:'ctr','font-size':'13'},world); c1.textContent='the calibration loop';
+    const c2=el('text',{x:CX,y:CY+26,class:'ctr','font-size':'9','fill':'#3a3630'},world); c2.textContent='reference → plan → build → eye → senses → measure → gauge → ledger';
+    NODES.forEach(drawCircle);
+  }
+}
+function build(){
+  const side=document.getElementById('side');
+  const lg=document.createElement('div');lg.className='legend';
+  lg.innerHTML=`<b>STATUS</b>
+    <span class="sw" style="background:${COLOR.tested}"></span>✓ built and tested<br>
+    <span class="sw" style="background:${COLOR.untested}"></span>◐ built, never executed<br>
+    <span class="sw" style="background:${COLOR.limited}"></span>⚠ built, known limitation<br>
+    <span class="sw" style="border:1.5px dashed ${COLOR.missing};background:#fff"></span>✗ missing or blocked<br>
+    <b style="margin-top:8px">FLOWS</b>
+    <span class="ln"></span>data workflow (the loop)<br>
+    <span class="ln d"></span>user workflow<br>
+    <span style="color:var(--ink-2)">select a part to fan out its functions</span>`;
+  side.appendChild(lg);
+  SECTIONS.forEach(([key,title])=>{
+    const h=document.createElement('h4');h.textContent=title;side.appendChild(h);
+    NODES.filter(n=>n.sec===key).forEach(n=>{
+      const b=document.createElement('button');b.className='item';b.id='item-'+n.id;
+      b.innerHTML=`<span class="k">${n.letter}</span><span class="n">${n.name}</span><span class="c">${n.fns.length}</span><span class="g" data-s="${n.status}" style="background:${COLOR[n.status]}">${GLYPH[n.status]}</span>`;
+      b.addEventListener('click',()=>select(n.id));
+      b.addEventListener('mouseenter',()=>{hover=n.id;render()});
+      b.addEventListener('mouseleave',()=>{hover=null;render()});
+      side.appendChild(b);
+    });
+  });
+  document.getElementById('openCount').textContent=`${OPEN.length} on the list · ${NODES.reduce((s,n)=>s+n.cond.length,0)} conditions on parts`;
+  drawWorld(); render();
+}
+
+/* --------------------------------------------------------------- state */
+let selected='P', hover=null, tab='does', step=-1, flowTimer=null, mode='circle';
+const done=new Set();
+
+
+function select(id){selected=id;render();document.getElementById('read').scrollTop=0}
+
+function render(){
+  const focus=hover||selected;
+  NODES.forEach(n=>{
+    const g=document.getElementById('blk-'+n.id), it=document.getElementById('item-'+n.id);
+    g.classList.toggle('on',n.id===selected); g.classList.toggle('hi',n.id===hover);
+    g.classList.toggle('dim',step>=0 && LOOP[step]!==n.id);
+    it.classList.toggle('on',n.id===selected);
+  });
+  document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tab===tab));
+  drawSatellites(focus);
+  const n=NODES.find(k=>k.id===focus);
+  const R=document.getElementById('read');
+  if(tab==='cond'&&!hover){ R.innerHTML=condPanel(n); return }
+  R.innerHTML=nodePanel(n);
+}
+
+function nodePanel(n){
+  const li=n.fns.map(([f,s])=>`<span class="st" data-s="${s}" style="background:${COLOR[s]}">${GLYPH[s]}</span><span>${f}</span>`).join('');
+  const role = LOOP.includes(n.id)?`Step ${LOOP.indexOf(n.id)+1} of the data workflow`:(USERFLOW.includes(n.id)?`Step ${USERFLOW.indexOf(n.id)+1} of the user workflow`:'Outside both workflows');
+  const body = tab==='built'
+    ? `<h5>HOW IT'S BUILT</h5><p>${n.built}</p>`
+    : `<h5>WHAT THIS IS</h5><p>${n.does}</p>`;
+  const cond = n.cond.length?`<h5>CONDITION</h5><ul>${n.cond.map(c=>`<li>${c}</li>`).join('')}</ul>`:`<h5>CONDITION</h5><p>Nothing currently wrong with this part.</p>`;
+  return `<div class="eyebrow">BLENDERTOOLS · ${n.letter}</div><h1>${n.name}</h1><div class="sub">${role}</div>
+    <div class="status-line" data-s="${n.status}" style="background:${COLOR[n.status]}">${GLYPH[n.status]} ${WORD[n.status]}</div>
+    ${body}<h5>PARTS</h5><div class="fn">${li}</div>${tab==='cond'?cond:''}
+    ${tab!=='cond'?`<h5>HOW TO READ IT</h5><p>Hover any block or list item for its description; <mark>How it's built</mark> gives the implementation; <mark>Condition</mark> lists what is currently wrong with it and the whole-project checklist. <mark>Trace one step</mark> walks the data workflow: reference → plan → build → eye → senses → measure → gauge → ledger → back to plan.</p>`:cond}`;
+}
+
+function condPanel(n){
+  const items=OPEN.map(([t,who],i)=>`<label class="check ${done.has(i)?'done':''}"><input type="checkbox" data-i="${i}" ${done.has(i)?'checked':''}><span class="t">${t}</span><span class="who">${who}</span></label>`).join('');
+  const parts=NODES.filter(k=>k.cond.length).map(k=>`<li><b>${k.letter} ${k.name}</b> — ${k.cond.join(' ')}</li>`).join('');
+  return `<div class="eyebrow">BLENDERTOOLS · CONDITION</div><h1>What is still open</h1><div class="sub">${OPEN.length} items · ${done.size} ticked in this view (not saved)</div>
+    <h5>THE CHECKLIST, IN ORDER OF WHAT UNBLOCKS WHAT</h5><div id="checks">${items}</div>
+    <h5>CONDITIONS ON PARTS</h5><ul>${parts}</ul>
+    <h5>WHAT “DONE” MEANS</h5><p>The loop has run end to end on the new instruments: a real model rebuilt from its plan, measured by a scorecard, gated against an approved baseline, and logged — with the live transport, the installer and <code>run_isolated()</code> all executed at least once.</p>`;
+}
+document.getElementById('read').addEventListener('change',e=>{
+  if(e.target.matches('input[data-i]')){const i=+e.target.dataset.i; e.target.checked?done.add(i):done.delete(i); render()}
+});
+
+/* --------------------------------------------------------- interactions */
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;render()}));
+function traceStep(){step=(step+1)%(LOOP.length-1); selected=LOOP[step]; hover=null; render()}
+document.getElementById('btnStep').addEventListener('click',traceStep);
+document.getElementById('btnView').addEventListener('click',e=>{
+  mode = mode==='circle' ? 'iso' : 'circle';
+  e.target.textContent = mode==='circle' ? 'CIRCLE VIEW' : 'ISOMETRIC VIEW';
+  e.target.setAttribute('aria-pressed', mode==='circle');
+  view={x:0,y:0,k:1}; apply(); drawWorld(); render();
+});
+document.getElementById('btnFlow').addEventListener('click',e=>{
+  if(flowTimer){clearInterval(flowTimer);flowTimer=null;e.target.setAttribute('aria-pressed','false');e.target.textContent='▸ RESUME THE FLOW';step=-1;render();return}
+  traceStep(); flowTimer=setInterval(traceStep,1400); e.target.setAttribute('aria-pressed','true'); e.target.textContent='■ PAUSE THE FLOW';
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'){traceStep()}
+  if(e.key==='ArrowLeft'){step=(step-1+LOOP.length-1)%(LOOP.length-1);selected=LOOP[step];render()}
+  if(e.key==='Escape'){step=-1;render()}
+});
+
+// pan + zoom on the world group
+const svg=document.getElementById('svg');
+let view={x:0,y:0,k:1}, drag=null;
+const apply=()=>world.setAttribute('transform',`translate(${view.x} ${view.y}) scale(${view.k})`);
+svg.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,vx:view.x,vy:view.y};svg.classList.add('drag');svg.setPointerCapture(e.pointerId)});
+svg.addEventListener('pointermove',e=>{if(!drag)return;const r=svg.getBoundingClientRect(),s=1200/r.width;view.x=drag.vx+(e.clientX-drag.x)*s;view.y=drag.vy+(e.clientY-drag.y)*s;apply()});
+svg.addEventListener('pointerup',()=>{drag=null;svg.classList.remove('drag')});
+svg.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.1:1/1.1,e)},{passive:false});
+function zoom(f,e){const r=svg.getBoundingClientRect(),s=1200/r.width;const cx=e?(e.clientX-r.left)*s:600,cy=e?(e.clientY-r.top)*s:390;
+  view.x=cx-(cx-view.x)*f; view.y=cy-(cy-view.y)*f; view.k*=f; apply()}
+document.getElementById('zin').addEventListener('click',()=>zoom(1.2));
+document.getElementById('zout').addEventListener('click',()=>zoom(1/1.2));
+document.getElementById('btnReset').addEventListener('click',()=>{view={x:0,y:0,k:1};apply();step=-1;if(flowTimer){clearInterval(flowTimer);flowTimer=null;const b=document.getElementById('btnFlow');b.setAttribute('aria-pressed','false');b.textContent='▸ RESUME THE FLOW'}render()});
+
+build();
+</script>
+</body>
+</html>

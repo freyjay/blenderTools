@@ -38,7 +38,8 @@ Read the whole file, then `references/toolkit-api.md` (signatures) and
 `references/session-lessons.md` (the failure behind each rule). The 14 doctrine
 lines are not style — each one closed a specific, logged bug.
 
-## 4. Know where the work stands  →  ledger/masterwork_ledger.md
+## 4. Know where the work stands  →  STATUS.md, then ledger/masterwork_ledger.md
+`STATUS.md` is the checklist (parts, function-level marks, open items in order).
 Read the LAST two sections and the "Carried queue". That is the current state
 and the open items. Add to it as you work; log failures as carefully as wins.
 
