@@ -1,0 +1,1972 @@
+{
+  "schema": 1,
+  "model": "boy_v3",
+  "detail": 3,
+  "notes": "captured from boy_v3.blend 2026-09-07. Transforms exact. Shape recorded as 'sphere' for every part (v3 predates bt_shape tags; all parts were UV spheres by construction). 'JawBlend' declared in the graph but absent from the scene -- skipped. Fused skin not captured; its 10 source parts are the truth.",
+  "package": "0.9.0",
+  "parameters": {},
+  "layers": {
+    "skin": {
+      "continuity": "fuse"
+    },
+    "eyes": {
+      "continuity": "separate"
+    },
+    "eye_deco": {
+      "continuity": "separate"
+    },
+    "brows": {
+      "continuity": "separate"
+    },
+    "hair": {
+      "continuity": "separate"
+    },
+    "cloth": {
+      "continuity": "separate"
+    }
+  },
+  "parts": [
+    {
+      "name": "Cranium",
+      "layer": "skin",
+      "shape": "sphere",
+      "location": [
+        0.0,
+        -0.02,
+        0.15
+      ],
+      "scale": [
+        0.93,
+        1.14,
+        0.97
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.92,
+        0.89,
+        0.85,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Face",
+      "layer": "skin",
+      "shape": "sphere",
+      "location": [
+        0.0,
+        -0.18,
+        -0.28
+      ],
+      "scale": [
+        0.71,
+        0.72,
+        0.78
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.92,
+        0.89,
+        0.85,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Jaw",
+      "layer": "skin",
+      "shape": "sphere",
+      "location": [
+        0.0,
+        -0.37,
+        -0.68
+      ],
+      "scale": [
+        0.51,
+        0.54,
+        0.48
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.92,
+        0.89,
+        0.85,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "CheekL",
+      "layer": "skin",
+      "shape": "sphere",
+      "location": [
+        0.42,
+        -0.5,
+        -0.45
+      ],
+      "scale": [
+        0.3,
+        0.28,
+        0.3
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.92,
+        0.89,
+        0.85,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "CheekR",
+      "layer": "skin",
+      "shape": "sphere",
+      "location": [
+        -0.42,
+        -0.5,
+        -0.45
+      ],
+      "scale": [
+        0.3,
+        0.28,
+        0.3
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.92,
+        0.89,
+        0.85,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Nose",
+      "layer": "skin",
+      "shape": "sphere",
+      "location": [
+        0.0,
+        -0.98,
+        -0.52
+      ],
+      "scale": [
+        0.085,
+        0.1,
+        0.085
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.92,
+        0.89,
+        0.85,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "LipUp",
+      "layer": "skin",
+      "shape": "sphere",
+      "location": [
+        0.0,
+        -0.9,
+        -0.8
+      ],
+      "scale": [
+        0.23,
+        0.06,
+        0.045
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.88,
+        0.8,
+        0.78,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "EarL",
+      "layer": "skin",
+      "shape": "sphere",
+      "location": [
+        0.9,
+        -0.12,
+        -0.14
+      ],
+      "scale": [
+        0.1,
+        0.24,
+        0.3
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.92,
+        0.89,
+        0.85,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "EarR",
+      "layer": "skin",
+      "shape": "sphere",
+      "location": [
+        -0.9,
+        -0.12,
+        -0.14
+      ],
+      "scale": [
+        0.1,
+        0.24,
+        0.3
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.92,
+        0.89,
+        0.85,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Neck",
+      "layer": "skin",
+      "shape": "sphere",
+      "location": [
+        0.0,
+        0.0,
+        -1.42
+      ],
+      "scale": [
+        0.26,
+        0.26,
+        0.42
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.92,
+        0.89,
+        0.85,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "EyeL",
+      "layer": "eyes",
+      "shape": "sphere",
+      "location": [
+        0.385,
+        -0.72,
+        -0.02
+      ],
+      "scale": [
+        0.23,
+        0.2,
+        0.23
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.98,
+        0.98,
+        0.98,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "EyeR",
+      "layer": "eyes",
+      "shape": "sphere",
+      "location": [
+        -0.385,
+        -0.72,
+        -0.02
+      ],
+      "scale": [
+        0.23,
+        0.2,
+        0.23
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.98,
+        0.98,
+        0.98,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "IrisL",
+      "layer": "eye_deco",
+      "shape": "sphere",
+      "location": [
+        0.385,
+        -0.955,
+        -0.02
+      ],
+      "scale": [
+        0.175,
+        0.055,
+        0.175
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.25,
+        0.2,
+        0.95,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "IrisR",
+      "layer": "eye_deco",
+      "shape": "sphere",
+      "location": [
+        -0.385,
+        -0.955,
+        -0.02
+      ],
+      "scale": [
+        0.175,
+        0.055,
+        0.175
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.25,
+        0.2,
+        0.95,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "PupilL",
+      "layer": "eye_deco",
+      "shape": "sphere",
+      "location": [
+        0.385,
+        -1.0,
+        -0.02
+      ],
+      "scale": [
+        0.09,
+        0.03,
+        0.09
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.02,
+        0.02,
+        0.05,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "PupilR",
+      "layer": "eye_deco",
+      "shape": "sphere",
+      "location": [
+        -0.385,
+        -1.0,
+        -0.02
+      ],
+      "scale": [
+        0.09,
+        0.03,
+        0.09
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.02,
+        0.02,
+        0.05,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "BrowL",
+      "layer": "brows",
+      "shape": "sphere",
+      "location": [
+        0.385,
+        -0.8,
+        0.25
+      ],
+      "scale": [
+        0.28,
+        0.065,
+        0.075
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.38,
+        0.3,
+        0.34,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "BrowR",
+      "layer": "brows",
+      "shape": "sphere",
+      "location": [
+        -0.385,
+        -0.8,
+        0.25
+      ],
+      "scale": [
+        0.28,
+        0.065,
+        0.075
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.38,
+        0.3,
+        0.34,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_00",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.1497,
+        0.05,
+        1.0881
+      ],
+      "scale": [
+        0.3344,
+        0.1397,
+        0.1161
+      ],
+      "rotation": [
+        8.889,
+        -1.805,
+        101.389
+      ],
+      "color": [
+        0.354,
+        0.3,
+        0.342,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_01",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.19,
+        0.2241,
+        1.0644
+      ],
+      "scale": [
+        0.3378,
+        0.1334,
+        0.1089
+      ],
+      "rotation": [
+        -13.97,
+        7.326,
+        74.645
+      ],
+      "color": [
+        0.352,
+        0.3,
+        0.336,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_02",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.0289,
+        -0.2793,
+        1.0406
+      ],
+      "scale": [
+        0.3919,
+        0.1809,
+        0.1409
+      ],
+      "rotation": [
+        1.34,
+        -20.322,
+        91.161
+      ],
+      "color": [
+        0.4,
+        0.3,
+        0.317,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_03",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.2365,
+        0.3584,
+        1.0169
+      ],
+      "scale": [
+        0.3106,
+        0.1614,
+        0.1257
+      ],
+      "rotation": [
+        19.896,
+        13.97,
+        108.82
+      ],
+      "color": [
+        0.385,
+        0.3,
+        0.334,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_04",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.4311,
+        -0.0263,
+        0.9931
+      ],
+      "scale": [
+        0.4192,
+        0.1293,
+        0.1208
+      ],
+      "rotation": [
+        -22.434,
+        -16.226,
+        65.941
+      ],
+      "color": [
+        0.367,
+        0.3,
+        0.319,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_05",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.4056,
+        -0.208,
+        0.9694
+      ],
+      "scale": [
+        0.3908,
+        0.1914,
+        0.1592
+      ],
+      "rotation": [
+        19.468,
+        -23.823,
+        106.348
+      ],
+      "color": [
+        0.361,
+        0.3,
+        0.345,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_06",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.1348,
+        0.5513,
+        0.9456
+      ],
+      "scale": [
+        0.3626,
+        0.1438,
+        0.1057
+      ],
+      "rotation": [
+        -13.702,
+        30.455,
+        79.358
+      ],
+      "color": [
+        0.354,
+        0.3,
+        0.314,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_07",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.2553,
+        -0.4415,
+        0.9219
+      ],
+      "scale": [
+        0.4008,
+        0.2137,
+        0.1347
+      ],
+      "rotation": [
+        -12.076,
+        -33.81,
+        83.584
+      ],
+      "color": [
+        0.369,
+        0.3,
+        0.345,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_08",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.55,
+        0.2508,
+        0.8981
+      ],
+      "scale": [
+        0.3294,
+        0.1375,
+        0.1138
+      ],
+      "rotation": [
+        36.853,
+        -10.213,
+        123.371
+      ],
+      "color": [
+        0.392,
+        0.3,
+        0.325,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_09",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.5681,
+        0.2845,
+        0.8744
+      ],
+      "scale": [
+        0.3434,
+        0.1475,
+        0.116
+      ],
+      "rotation": [
+        -39.353,
+        -9.567,
+        56.112
+      ],
+      "color": [
+        0.394,
+        0.3,
+        0.327,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_10",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.2719,
+        -0.5311,
+        0.8506
+      ],
+      "scale": [
+        0.5357,
+        0.1698,
+        0.1305
+      ],
+      "rotation": [
+        13.642,
+        -40.632,
+        94.637
+      ],
+      "color": [
+        0.395,
+        0.3,
+        0.319,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_11",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.1995,
+        0.686,
+        0.8269
+      ],
+      "scale": [
+        0.325,
+        0.1207,
+        0.1056
+      ],
+      "rotation": [
+        22.231,
+        39.672,
+        105.214
+      ],
+      "color": [
+        0.396,
+        0.3,
+        0.344,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_12",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.5969,
+        -0.2959,
+        0.8031
+      ],
+      "scale": [
+        0.506,
+        0.1795,
+        0.1426
+      ],
+      "rotation": [
+        -30.545,
+        -37.034,
+        74.507
+      ],
+      "color": [
+        0.386,
+        0.3,
+        0.345,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_13",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.695,
+        -0.1028,
+        0.7794
+      ],
+      "scale": [
+        0.4242,
+        0.2122,
+        0.1543
+      ],
+      "rotation": [
+        36.733,
+        -34.244,
+        114.619
+      ],
+      "color": [
+        0.378,
+        0.3,
+        0.35,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_14",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.421,
+        0.6488,
+        0.7556
+      ],
+      "scale": [
+        0.2579,
+        0.149,
+        0.1017
+      ],
+      "rotation": [
+        -43.862,
+        27.849,
+        61.032
+      ],
+      "color": [
+        0.41,
+        0.3,
+        0.359,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_15",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.0965,
+        -0.6947,
+        0.7319
+      ],
+      "scale": [
+        0.3849,
+        0.1788,
+        0.137
+      ],
+      "rotation": [
+        -5.791,
+        -52.001,
+        89.95
+      ],
+      "color": [
+        0.351,
+        0.3,
+        0.338,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_16",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.5878,
+        0.5454,
+        0.7081
+      ],
+      "scale": [
+        0.2669,
+        0.1185,
+        0.0775
+      ],
+      "rotation": [
+        53.656,
+        7.546,
+        124.605
+      ],
+      "color": [
+        0.396,
+        0.3,
+        0.318,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_17",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.7848,
+        0.0825,
+        0.6844
+      ],
+      "scale": [
+        0.2745,
+        0.13,
+        0.107
+      ],
+      "rotation": [
+        -46.185,
+        -35.661,
+        58.411
+      ],
+      "color": [
+        0.355,
+        0.3,
+        0.337,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_18",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.0377,
+        0.8649,
+        0.6369
+      ],
+      "scale": [
+        0.3074,
+        0.1498,
+        0.1029
+      ],
+      "rotation": [
+        -5.606,
+        59.005,
+        86.116
+      ],
+      "color": [
+        0.402,
+        0.3,
+        0.327,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_19",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.8348,
+        0.1623,
+        0.5894
+      ],
+      "scale": [
+        0.2842,
+        0.1232,
+        0.1031
+      ],
+      "rotation": [
+        54.987,
+        -36.285,
+        120.181
+      ],
+      "color": [
+        0.407,
+        0.3,
+        0.319,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_20",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.7012,
+        0.5379,
+        0.5656
+      ],
+      "scale": [
+        0.2516,
+        0.1163,
+        0.0789
+      ],
+      "rotation": [
+        -64.022,
+        -2.792,
+        53.811
+      ],
+      "color": [
+        0.379,
+        0.3,
+        0.345,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_21",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.4354,
+        0.8099,
+        0.5181
+      ],
+      "scale": [
+        0.2565,
+        0.1039,
+        0.0836
+      ],
+      "rotation": [
+        58.404,
+        42.303,
+        127.697
+      ],
+      "color": [
+        0.372,
+        0.3,
+        0.344,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_22",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.3484,
+        0.8825,
+        0.4469
+      ],
+      "scale": [
+        0.3287,
+        0.1291,
+        0.0841
+      ],
+      "rotation": [
+        -57.929,
+        53.946,
+        49.575
+      ],
+      "color": [
+        0.387,
+        0.3,
+        0.351,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_23",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.8114,
+        0.4765,
+        0.3994
+      ],
+      "scale": [
+        0.2184,
+        0.1347,
+        0.0908
+      ],
+      "rotation": [
+        73.914,
+        -18.666,
+        122.998
+      ],
+      "color": [
+        0.402,
+        0.3,
+        0.358,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_24",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.8923,
+        0.2852,
+        0.3756
+      ],
+      "scale": [
+        0.2541,
+        0.1129,
+        0.0679
+      ],
+      "rotation": [
+        -72.857,
+        -36.318,
+        64.88
+      ],
+      "color": [
+        0.388,
+        0.3,
+        0.314,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_25",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.1581,
+        0.9697,
+        0.3281
+      ],
+      "scale": [
+        0.2122,
+        0.1027,
+        0.0681
+      ],
+      "rotation": [
+        50.801,
+        72.742,
+        132.335
+      ],
+      "color": [
+        0.37,
+        0.3,
+        0.313,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_26",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.9378,
+        -0.0277,
+        0.2806
+      ],
+      "scale": [
+        0.1998,
+        0.098,
+        0.0646
+      ],
+      "rotation": [
+        77.188,
+        -51.68,
+        95.38
+      ],
+      "color": [
+        0.372,
+        0.3,
+        0.312,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_27",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.641,
+        0.7429,
+        0.2569
+      ],
+      "scale": [
+        0.2901,
+        0.1143,
+        0.0652
+      ],
+      "rotation": [
+        -83.363,
+        13.248,
+        44.299
+      ],
+      "color": [
+        0.365,
+        0.3,
+        0.331,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_28",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.637,
+        0.7522,
+        0.2094
+      ],
+      "scale": [
+        0.2299,
+        0.0933,
+        0.0843
+      ],
+      "rotation": [
+        86.336,
+        12.027,
+        137.023
+      ],
+      "color": [
+        0.41,
+        0.3,
+        0.338,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_29",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.9453,
+        -0.0376,
+        0.1856
+      ],
+      "scale": [
+        0.2392,
+        0.0907,
+        0.0614
+      ],
+      "rotation": [
+        -86.474,
+        -52.426,
+        92.499
+      ],
+      "color": [
+        0.371,
+        0.3,
+        0.326,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_30",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.17,
+        0.9846,
+        0.1381
+      ],
+      "scale": [
+        0.2672,
+        0.091,
+        0.0575
+      ],
+      "rotation": [
+        -92.296,
+        71.817,
+        8.129
+      ],
+      "color": [
+        0.407,
+        0.3,
+        0.342,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_31",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.9144,
+        0.3006,
+        0.0906
+      ],
+      "scale": [
+        0.1939,
+        0.1017,
+        0.0561
+      ],
+      "rotation": [
+        94.681,
+        -40.019,
+        102.312
+      ],
+      "color": [
+        0.382,
+        0.3,
+        0.369,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_32",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.842,
+        0.4821,
+        0.0669
+      ],
+      "scale": [
+        0.2596,
+        0.1055,
+        0.0617
+      ],
+      "rotation": [
+        -95.69,
+        -28.043,
+        65.516
+      ],
+      "color": [
+        0.372,
+        0.3,
+        0.32,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_33",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.3548,
+        0.9215,
+        0.0194
+      ],
+      "scale": [
+        0.2438,
+        0.0971,
+        0.0736
+      ],
+      "rotation": [
+        -79.924,
+        141.806,
+        -15.88
+      ],
+      "color": [
+        0.37,
+        0.3,
+        0.323,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_34",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.4694,
+        0.8509,
+        -0.0519
+      ],
+      "scale": [
+        0.2367,
+        0.1072,
+        0.0723
+      ],
+      "rotation": [
+        -102.512,
+        11.224,
+        27.899
+      ],
+      "color": [
+        0.398,
+        0.3,
+        0.359,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_35",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.7473,
+        0.5809,
+        -0.0994
+      ],
+      "scale": [
+        0.2234,
+        0.0807,
+        0.0619
+      ],
+      "rotation": [
+        106.75,
+        -24.376,
+        118.308
+      ],
+      "color": [
+        0.371,
+        0.3,
+        0.312,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_36",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.9029,
+        0.1625,
+        -0.1231
+      ],
+      "scale": [
+        0.1596,
+        0.081,
+        0.0547
+      ],
+      "rotation": [
+        -113.728,
+        -44.4,
+        99.991
+      ],
+      "color": [
+        0.392,
+        0.3,
+        0.367,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_37",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.0326,
+        0.9437,
+        -0.1706
+      ],
+      "scale": [
+        0.1936,
+        0.1001,
+        0.0717
+      ],
+      "rotation": [
+        -40.938,
+        116.537,
+        43.797
+      ],
+      "color": [
+        0.407,
+        0.3,
+        0.332,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_38",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.8746,
+        0.0947,
+        -0.2181
+      ],
+      "scale": [
+        0.1745,
+        0.0788,
+        0.0527
+      ],
+      "rotation": [
+        122.419,
+        -43.714,
+        69.231
+      ],
+      "color": [
+        0.362,
+        0.3,
+        0.347,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_39",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.6671,
+        0.6012,
+        -0.2419
+      ],
+      "scale": [
+        0.2316,
+        0.0972,
+        0.0595
+      ],
+      "rotation": [
+        -117.625,
+        -27.174,
+        63.877
+      ],
+      "color": [
+        0.389,
+        0.3,
+        0.358,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_40",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.4777,
+        0.7437,
+        -0.2894
+      ],
+      "scale": [
+        0.1631,
+        0.0918,
+        0.0698
+      ],
+      "rotation": [
+        -59.277,
+        -154.861,
+        -48.719
+      ],
+      "color": [
+        0.397,
+        0.3,
+        0.355,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Hair_41",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.2472,
+        0.812,
+        -0.3606
+      ],
+      "scale": [
+        0.1962,
+        0.0774,
+        0.0669
+      ],
+      "rotation": [
+        -132.992,
+        -37.978,
+        47.815
+      ],
+      "color": [
+        0.37,
+        0.3,
+        0.358,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "HairHero_0",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.1431,
+        -0.3258,
+        0.9552
+      ],
+      "scale": [
+        0.72,
+        0.19,
+        0.13
+      ],
+      "rotation": [
+        67.465,
+        -52.675,
+        -106.895
+      ],
+      "color": [
+        0.36,
+        0.29,
+        0.33,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "HairHero_1",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        0.1776,
+        -0.2608,
+        0.9758
+      ],
+      "scale": [
+        0.62,
+        0.19,
+        0.13
+      ],
+      "rotation": [
+        51.051,
+        -56.047,
+        -83.797
+      ],
+      "color": [
+        0.36,
+        0.29,
+        0.33,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "HairHero_2",
+      "layer": "hair",
+      "shape": "sphere",
+      "location": [
+        -0.325,
+        -0.2208,
+        0.9444
+      ],
+      "scale": [
+        0.55,
+        0.19,
+        0.13
+      ],
+      "rotation": [
+        86.023,
+        -53.53,
+        -123.204
+      ],
+      "color": [
+        0.36,
+        0.29,
+        0.33,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    },
+    {
+      "name": "Collar",
+      "layer": "cloth",
+      "shape": "sphere",
+      "location": [
+        0.0,
+        0.0,
+        -1.78
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "color": [
+        0.93,
+        0.92,
+        0.9,
+        1.0
+      ],
+      "min_detail": 1,
+      "max_detail": 5,
+      "segments": 24,
+      "shape_args": {}
+    }
+  ],
+  "resolved_parameters": {
+    "detail": 3
+  },
+  "profile": {
+    "name": "defined",
+    "voxel": 0.05,
+    "segments": 24,
+    "hair_pods": 45,
+    "senses": [
+      "proportions",
+      "silhouette",
+      "hardness",
+      "turntable"
+    ],
+    "gauge": true,
+    "quadriflow": false
+  },
+  "build_options": {
+    "voxel": 0.05,
+    "segments": 24
+  },
+  "sha256": "cad4416ac7f029d184f0cc20ffde886feb2ceb1cba0d19daa171adc6392536b8"
+}
