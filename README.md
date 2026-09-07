@@ -10,7 +10,7 @@
 
 ## Why this exists
 
-Blender's official MCP add-on lets an LLM execute Python inside Blender. It also offers screenshots — but over that transport, images are budgeted, downscaled, and arrive too degraded for the agent to read anything but the simplest scene. The human sees a crisp render; the agent sees mush.
+Blender's official MCP add-on lets an LLM execute Python inside Blender. It also offers screenshots — but over the official add-on's screenshot tool, images are budgeted, downscaled, and arrive too degraded for the agent to read anything but the simplest scene. The human sees a crisp render; the agent sees mush.
 
 So this project gives the agent a different kind of sight. Every "view" is a ray-cast render expressed as **text**: object IDs, silhouette edges, depth ramps, surface shading — characters instead of pixels. Text always survives the wire. On top of that sit measurement senses (proportion, contour angle, rotation continuity, surface hardness, cavity depth, a 30×30 occupancy grid), a part-graph that declares which surfaces must be continuous and where breaks belong, and a ground-truth calibration suite that tests the instruments against shapes with exactly known geometry.
 
@@ -106,14 +106,14 @@ bt.senses.proportions("FRONT", frame=["MyObject"])
 from blendertools import gauge, refs
 sc = gauge.scorecard("boy_v3", frame_face=["SkinFused", "EarL", "EarR"],
                      ref_grid_front=gauge.spans_to_grid(refs.BOY_FRONT_SPANS_30))
-gauge.log(sc); gauge.compare_to_last(sc)
+gauge.gate(sc); gauge.log(sc)   # gate BEFORE log -- a failed candidate must not become a baseline
 ```
 
 After editing any module: `bt.reload()`.
 
 ## Status
 
-**v0.6.0 — working, experimental, honest about its ceiling.** Models are sphere-blockout plus voxel fusion; the topology gap (quad flow, subdivision-ready meshes) is the current frontier, and `recipes.quadriflow` is the first step. The calibration suite passes 4/4. The gauge system exists but has one baseline logged. The tooling grew inside one long collaborative session between a human teaching calibration the way an atelier teaches drawing and an agent building the instruments it was being taught to use — the ledger reads accordingly.
+**v0.7.0 — working, experimental, honest about its ceiling.** An independent audit of v0.6.0 reproduced twelve defects; all P1s are fixed with regression tests (see `AUDIT-RESPONSE.md`). Models are sphere-blockout plus voxel fusion; the topology gap (quad flow, subdivision-ready meshes) is the current frontier, and `recipes.quadriflow` is the first step. The calibration suite passes 16/16 (5 known-geometry cases, 10 regression tests from the external audit, and a scene-integrity assertion). The gauge system exists but has one baseline logged. The tooling grew inside one long collaborative session between a human teaching calibration the way an atelier teaches drawing and an agent building the instruments it was being taught to use — the ledger reads accordingly.
 
 ## Credits
 

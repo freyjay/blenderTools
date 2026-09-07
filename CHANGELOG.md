@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.7.0 — 2026-09-06 (audit response, Stage A)
+All P1 findings from the external audit of v0.6.0 fixed, each with a regression
+test; suite grows 5 -> 16 including a scene-integrity assertion with planted
+decoys. Frame validation in eye/senses (typos raise), render-visibility reset
+on re-fuse, fuse contracts enforced with ownership-checked overwrite, gate()
+with explicit compatible baseline and no cross-model fallback, scorecard id/
+weights/config-hash/coverage, iou shape validation, cross_section edge remap,
+cavity_probe -> estimate + enclosure_check, turntable guard, override allow-list,
+plan hash covers build options + verify() before build, width_at rejects
+out-of-range and returns sampled_z. See AUDIT-RESPONSE.md. Stage B (unified BVH
+casting, depth-bounds origins) is listed as not_verified in every report.
+
 ## 0.6.0 — 2026-09-06
 Adopted from the Astra Blender Studio study (its rigor, not its scope):
 - `plan.py`: data-before-code. Declarative model specs with an ast-whitelisted

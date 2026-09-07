@@ -31,10 +31,11 @@ def reference_fit(frame_face, canon, heights, eye_name="EyeL", iris_name="IrisL"
     """Ratio scorecard vs canon. Reports the contributors inside each ruler so
     a contaminated denominator is visible, not silent."""
     O = bpy.data.objects
-    W, W_parts = measure.width_at(heights["eye_level"], frame_face)
+    W, W_info = measure.width_at(heights["eye_level"], frame_face)
     cheek, _ = measure.width_at(heights["cheek"], frame_face)
     jaw, _ = measure.width_at(heights["jaw"], frame_face)
     neck, _ = measure.width_at(heights["neck"], frame_face)
+    W_parts = W_info["contributors"]
     r = {}
     if eye_name in O:
         r["eye_span_over_W"] = measure.ratio(2 * abs(O[eye_name].location.x), W, "eye_span_over_W", canon.get("eye_span_over_W"))
@@ -51,7 +52,7 @@ def reference_fit(frame_face, canon, heights, eye_name="EyeL", iris_name="IrisL"
     worst = max(r.values(), key=lambda v: v.get("diff", 0))
     return {"score": round(passed / n, 3) if n else None, "passed": passed, "n": n,
             "worst": (worst["name"], worst.get("diff")), "ratios": r,
-            "W": round(W, 4), "W_contributors": W_parts}
+            "W": round(W, 4), "W_contributors": W_parts, "W_sampled_z": W_info["sampled_z"]}
 
 
 # ------------------------------------------------------- silhouette (IoU) ----
@@ -70,7 +71,15 @@ def spans_to_grid(spans, n=None):
 
 
 def iou(grid_a, grid_b):
-    """Jaccard overlap of two same-size occupancy grids + per-row error."""
+    """Jaccard overlap of two same-size occupancy grids + per-row error.
+    Shapes must match exactly -- zip() would silently drop cells (audit P2-11)."""
+    def shape(g):
+        widths = {len(r) for r in g}
+        if len(widths) != 1:
+            raise ValueError("iou: grid rows have unequal widths")
+        return (len(g), widths.pop())
+    if shape(grid_a) != shape(grid_b):
+        raise ValueError(f"iou: grid shapes differ {shape(grid_a)} vs {shape(grid_b)} -- check registration")
     inter = union = 0
     rows = []
     for ra, rb in zip(grid_a, grid_b):
@@ -210,8 +219,12 @@ def scorecard(model_id, frame_face, canon=None, heights=None, ref_grid_front=Non
               ref_grid_side=None, skin_name="SkinFused", ownership_probes=None, notes=""):
     canon = canon or config.CANON_BOY
     heights = heights or config.MEASURE_HEIGHTS_BOY
-    sc = {"model": model_id, "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
-          "blender": bpy.app.version_string, "pkg": config.VERSION_STR, "notes": notes}
+    import hashlib, uuid
+    w = config.GAUGE_WEIGHTS
+    cfg_hash = hashlib.sha256(json.dumps({"weights": w, "canon": canon, "heights": heights}, sort_keys=True).encode()).hexdigest()[:16]
+    sc = {"id": uuid.uuid4().hex, "model": model_id, "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
+          "blender": bpy.app.version_string, "pkg": config.VERSION_STR, "notes": notes,
+          "weights": dict(w), "config_hash": cfg_hash, "frame_face": list(frame_face)}
     sc["fit"] = reference_fit(frame_face, canon, heights, skin_name=skin_name)
     if ref_grid_front:
         sc["silhouette_front"] = silhouette_fit(ref_grid_front, "FRONT")
@@ -223,15 +236,17 @@ def scorecard(model_id, frame_face, canon=None, heights=None, ref_grid_front=Non
     sc["symmetry"] = symmetry(frame_face)
     if ownership_probes:
         sc["ownership"] = ownership(ownership_probes)
-    # composite: transparent weights from config
-    w = config.GAUGE_WEIGHTS
+    # composite: transparent weights; a MISSING component counts as 0, never as
+    # "renormalize the others upward" (audit P1-5). Coverage is recorded so gate()
+    # can refuse to compare scorecards that measured different things.
     parts = {"fit": sc["fit"]["score"], "surface": sc["surface"].get("score"),
              "topology": sc.get("topology", {}).get("score"), "symmetry": sc["symmetry"].get("score"),
              "silhouette": (sc.get("silhouette_front") or {}).get("iou")}
-    num = sum(w[k] * v for k, v in parts.items() if v is not None)
-    den = sum(w[k] for k, v in parts.items() if v is not None)
+    num = sum(w[k] * (v or 0.0) for k, v in parts.items())
+    den = sum(w.values())
     sc["composite"] = round(num / den, 4) if den else None
     sc["components"] = parts
+    sc["coverage"] = sorted(k for k, v in parts.items() if v is not None)
     return sc
 
 
@@ -250,33 +265,29 @@ def history(path=None):
         return [json.loads(line) for line in f if line.strip()]
 
 
-def compare_to_last(sc, path=None):
-    """Deltas vs the previous logged scorecard; anything that dropped is a regression."""
-    hist = history(path)
-    if not hist:
-        return {"first_entry": True}
-    prev = hist[-1]
-    deltas, regressions = {}, []
-    for k, v in sc["components"].items():
-        pv = prev.get("components", {}).get(k)
-        if v is not None and pv is not None:
-            d = round(v - pv, 4); deltas[k] = d
-            if d < -0.005:
-                regressions.append(k)
-    return {"vs": prev["model"], "composite_delta": round((sc["composite"] or 0) - (prev["composite"] or 0), 4),
-            "deltas": deltas, "regressions": regressions}
 
 
 # ---------------------------------------------------------- regression gate ----
+def baseline_for(sc, path=None):
+    """The most recent logged scorecard of the SAME model, with the same config
+    hash and coverage, that is not this scorecard. No cross-model fallback
+    (audit P1-5)."""
+    cands = [h for h in history(path)
+             if h.get("model") == sc.get("model") and h.get("id") != sc.get("id")]
+    same_cfg = [h for h in cands if h.get("config_hash") == sc.get("config_hash")
+                and h.get("coverage") == sc.get("coverage")]
+    return (same_cfg or [None])[-1], len(cands) - len(same_cfg)
+
+
 def gate(sc, path=None, tolerance=0.005, raise_on_fail=False):
-    """Invariant, not opinion: a new version may not lower any component or the
-    composite by more than `tolerance` versus the last logged scorecard of the
-    SAME model. Adopted from the Astra Studio smoke test's strictly-increasing
-    assertions. Returns {"ok", "regressions", "vs"}; optionally raises."""
-    hist = [h for h in history(path) if h.get("model") == sc.get("model")] or history(path)
-    if not hist:
-        return {"ok": True, "first_entry": True}
-    prev = hist[-1]
+    """Invariant, not opinion: a candidate may not lower any component or the
+    composite by more than `tolerance` versus its baseline. CALL BEFORE log():
+    the candidate is excluded by id, so log order can no longer fool the gate,
+    but a candidate that fails the gate should not be logged as a baseline."""
+    prev, incompatible = baseline_for(sc, path)
+    if prev is None:
+        return {"ok": True, "no_baseline": True, "incompatible_history": incompatible,
+                "note": "no compatible baseline for this model/config/coverage -- nothing to regress against"}
     regressions = []
     for k, v in sc["components"].items():
         pv = prev.get("components", {}).get(k)
@@ -285,7 +296,19 @@ def gate(sc, path=None, tolerance=0.005, raise_on_fail=False):
     if sc.get("composite") is not None and prev.get("composite") is not None \
             and (prev["composite"] - sc["composite"]) > tolerance:
         regressions.append({"component": "composite", "was": prev["composite"], "now": sc["composite"]})
-    out = {"ok": not regressions, "regressions": regressions, "vs": prev.get("model"), "vs_ts": prev.get("ts")}
+    out = {"ok": not regressions, "regressions": regressions, "vs_id": prev.get("id"),
+           "vs_ts": prev.get("ts"), "incompatible_history": incompatible}
     if raise_on_fail and regressions:
         raise AssertionError(f"regression gate failed: {regressions}")
     return out
+
+
+def compare_to_last(sc, path=None):
+    """Deltas vs the compatible baseline (same rules as gate)."""
+    prev, _ = baseline_for(sc, path)
+    if prev is None:
+        return {"no_baseline": True}
+    deltas = {k: round(v - prev["components"][k], 4) for k, v in sc["components"].items()
+              if v is not None and prev.get("components", {}).get(k) is not None}
+    return {"vs_id": prev.get("id"), "composite_delta": round((sc["composite"] or 0) - (prev["composite"] or 0), 4),
+            "deltas": deltas}

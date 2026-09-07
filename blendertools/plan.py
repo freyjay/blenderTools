@@ -122,10 +122,24 @@ def resolve(p, parameters=None):
                       "segments": part["segments"] or prof["segments"]})
     if not parts:
         raise ValueError("plan resolves to no parts at this detail level")
-    resolved = {**p, "parts": parts, "resolved_parameters": values, "profile": prof}
-    body = json.dumps({"parts": parts, "layers": p["layers"], "detail": p["detail"]}, sort_keys=True)
-    resolved["sha256"] = hashlib.sha256(body.encode()).hexdigest()
+    resolved = {**p, "parts": parts, "resolved_parameters": values, "profile": prof,
+                "build_options": {"voxel": prof["voxel"], "segments": prof["segments"]}}
+    resolved["sha256"] = _hash(resolved)
     return resolved
+
+
+def _hash(resolved):
+    """Content hash over everything that affects geometry: parts, layers, detail,
+    AND the profile/build options (audit P2-10 -- voxel size changed the result
+    but not the hash)."""
+    body = json.dumps({"parts": resolved["parts"], "layers": resolved["layers"], "detail": resolved["detail"],
+                       "build_options": resolved["build_options"], "schema": SCHEMA}, sort_keys=True)
+    return hashlib.sha256(body.encode()).hexdigest()
+
+
+def verify(resolved):
+    """Recompute and compare the hash. build() refuses a plan that fails this."""
+    return resolved.get("sha256") == _hash(resolved)
 
 
 def save(p, path):
@@ -153,9 +167,17 @@ def build(resolved, clear_first=False, fuse=True, collection=None):
     from mathutils import Vector
     if "sha256" not in resolved:
         raise ValueError("build() needs a resolved plan -- call resolve() first")
+    if not verify(resolved):
+        raise ValueError("build(): plan hash does not match its content -- plan was edited after resolve()")
     if clear_first:
-        for o in [o for o in bpy.data.objects if o.type in ("MESH", "CURVE")]:
+        # only run-owned geometry (audit P2-8): never nuke a user's scene by default
+        for o in [o for o in bpy.data.objects if o.type == "MESH" and o.get("bt_plan_sha256")]:
             bpy.data.objects.remove(o, do_unlink=True)
+    target_coll = None
+    if collection:
+        target_coll = bpy.data.collections.get(collection) or bpy.data.collections.new(collection)
+        if target_coll.name not in bpy.context.scene.collection.children:
+            bpy.context.scene.collection.children.link(target_coll)
     made = []
     for part in resolved["parts"]:
         seg = int(part["segments"]); loc = part["location"]; sa = part["shape_args"]
@@ -181,6 +203,11 @@ def build(resolved, clear_first=False, fuse=True, collection=None):
         o["bt_plan_sha256"] = resolved["sha256"]
         o["bt_layer"] = part["layer"]
         o["bt_detail"] = resolved["detail"]
+        o["bt_shape"] = shp
+        if target_coll is not None:
+            for c in list(o.users_collection):
+                c.objects.unlink(o)
+            target_coll.objects.link(o)
         bpy.ops.object.shade_smooth()
         made.append(o)
     fused = {}
@@ -211,7 +238,7 @@ def build(resolved, clear_first=False, fuse=True, collection=None):
 
 
 # ---------------------------------------------------------------- capture ----
-def capture(model_id, layers, detail=None, notes="captured from live scene"):
+def capture(model_id, layers, detail=None, notes="captured from live scene (APPROXIMATE: transforms exact, shape/materials/modifiers not)"):
     """Reverse direction: turn what is IN the scene into a plan, using a
     mesh_mind graph ({layer: {"continuity":..., "members":[...]}}) to assign
     parts to layers. Shape is recorded as 'sphere' unless the object carries a

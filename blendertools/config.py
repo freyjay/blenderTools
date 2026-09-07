@@ -91,7 +91,7 @@ CALIBRATION_REPORT_DIR = "~/Developer/blenderTools/ledger/calibration"
 PLANS_DIR = "~/Developer/blenderTools/plans"
 
 # ------------------------------------------------------------------ gauge ----
-VERSION_STR = "0.6.0"
+VERSION_STR = "0.7.0"
 GAUGE_LOG = "~/Developer/blenderTools/ledger/gauge_log.jsonl"
 # Composite weights. Transparent on purpose: change these, and the composite
 # score means something different -- so log the weights with the score.
@@ -119,10 +119,18 @@ def load_overrides():
         data = json.load(f)
     g = globals()
     applied = {}
+    ALLOWED = {"VOXEL_COARSE", "VOXEL_FINE", "QUADRIFLOW_FACES", "HARD_DEG", "DEFAULT_DETAIL",
+               "DETAIL_PROFILES", "GAUGE_WEIGHTS", "TOL", "GAUGE_LOG", "CALIBRATION_REPORT_DIR", "PLANS_DIR", "MCP_ADDON_FILE"}
     for k, v in data.items():
-        if k in g and not k.startswith("_"):
+        if k not in ALLOWED:
+            raise ValueError(f"overrides: '{k}' is not an overridable setting (allowed: {sorted(ALLOWED)})")
+        if isinstance(g[k], dict) and isinstance(v, dict):
+            # JSON keys are strings; profile keys are ints -- coerce (audit hardening)
+            v = {(int(kk) if kk.isdigit() else kk): vv for kk, vv in v.items()}
+            g[k] = {**g[k], **v}
+        else:
             g[k] = v
-            applied[k] = v
+        applied[k] = v
     return applied
 
 

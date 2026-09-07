@@ -234,3 +234,12 @@ doctor() patch-presence check + explicit not-verified fields, calibration
 evidence reports written to ledger/calibration/, mesh-sanity gauge fields, and
 gauge.gate() as a hard regression invariant. Declined: CAD/DXF, job queue,
 community bridge, and aspirational detail-level names.
+
+## v0.7.0 -- audit response, Stage A
+An independent audit of v0.6.0 (Astra team) reproduced 12 defects while our own
+suite passed 5/5. All P1s fixed with regression tests (suite 5 -> 16); scene
+integrity is now asserted with planted decoys; frame typos raise; re-fuse is
+render-visible; gate cannot be fooled by log order; hashes cover build options;
+cavity depth is an estimate with an enclosure check, not a verdict. Doctrine 15
+and 16 added. The lesson under the twelve: test the failure paths. Stage B
+(unified casting, depth-bounds origins) tracked in not_verified.

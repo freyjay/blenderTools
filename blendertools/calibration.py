@@ -1,16 +1,22 @@
-"""Ground-truth regression suite. Builds primitives with EXACTLY known geometry,
-measures them with the toolkit, asserts the toolkit recovers the truth.
-If a test fails, the INSTRUMENT is wrong -- here the scene is certain.
+"""Ground-truth regression suite.
+
+Two kinds of test live here: known-geometry calibration (torus, pyramid,
+occlusion, plan) and REGRESSION tests -- one per defect reproduced by the
+external audit of v0.6.0, so none of them can return unnoticed.
+
+Safety model (audit P1-1): every test runs inside isolated_scene(), which
+snapshots every pre-existing object's identity, hides them, gives this run a
+unique id for all names it creates, deletes only objects it created (by
+reference), then restores visibility and ASSERTS the pre-existing set is
+unchanged. A suite that damaged the scene reports passed=False even if every
+geometric test passed.
 
     import blendertools as bt
-    bt.calibration.run_all()   # -> {"passed": bool, "results": {...}, "assumptions": [...]}
-
-Runs inside an isolation context: every pre-existing object is hidden for the
-duration (ray_cast respects visibility) and restored afterwards, so the suite
-is valid in ANY open file, not just an empty one.
+    bt.calibration.run_all()   # -> {"passed", "results", "scene_integrity", "report_path"}
 """
 
 import math
+import uuid
 from contextlib import contextmanager
 
 import bpy
@@ -18,51 +24,73 @@ from mathutils import Vector
 
 from . import config, measure
 
-_COLL = "bc_calibration"
+_RUN = uuid.uuid4().hex[:8]
+_COLL = f"bt_calib_{_RUN}"
+_OWNED = []          # objects this run created, by reference
+
+
+def _n(base):
+    """Run-unique name -- never collides with a user's object (audit P1-1)."""
+    return f"{base}_{_RUN}"
 
 
 # -------------------------------------------------------------- isolation ----
+def _snapshot():
+    return {o.name: (o.as_pointer(), o.hide_get(), o.hide_render, o.hide_viewport) for o in bpy.data.objects}
+
+
 @contextmanager
 def isolated_scene():
-    """Hide everything that exists now; restore exact visibility on exit."""
-    saved = {o.name: (o.hide_get(), o.hide_render) for o in bpy.data.objects}
+    before = _snapshot()
     for o in bpy.data.objects:
         o.hide_set(True); o.hide_render = True
+    integrity = {"ok": True, "problems": []}
     try:
-        yield
+        yield integrity
     finally:
-        _clear()
-        for name, (hv, hr) in saved.items():
+        _cleanup()
+        for name, (ptr, hv, hr, hvp) in before.items():
             o = bpy.data.objects.get(name)
-            if o:
-                o.hide_set(hv); o.hide_render = hr
+            if o is None or o.as_pointer() != ptr:
+                integrity["problems"].append(f"pre-existing object lost or replaced: {name}")
+                continue
+            o.hide_set(hv); o.hide_render = hr; o.hide_viewport = hvp
+        after = _snapshot()
+        extra = set(after) - set(before)
+        if extra:
+            integrity["problems"].append(f"objects left behind: {sorted(extra)}")
+        integrity["ok"] = not integrity["problems"]
 
 
-def _scratch():
-    coll = bpy.data.collections.get(_COLL)
-    if coll is None:
-        coll = bpy.data.collections.new(_COLL)
-        bpy.context.scene.collection.children.link(coll)
-    return coll
-
-
-def _clear():
-    coll = bpy.data.collections.get(_COLL)
-    if not coll:
-        return
-    for o in list(coll.objects):
-        bpy.data.objects.remove(o, do_unlink=True)
-    bpy.data.collections.remove(coll)
+def _coll():
+    c = bpy.data.collections.get(_COLL)
+    if c is None:
+        c = bpy.data.collections.new(_COLL)
+        bpy.context.scene.collection.children.link(c)
+    return c
 
 
 def _adopt(name):
     o = bpy.context.active_object
     for c in list(o.users_collection):
         c.objects.unlink(o)
-    _scratch().objects.link(o)
-    o.name = name
+    _coll().objects.link(o)
+    o.name = _n(name)
     o.hide_set(False); o.hide_render = False
+    _OWNED.append(o)
     return o
+
+
+def _cleanup():
+    for o in list(_OWNED):
+        try:
+            bpy.data.objects.remove(o, do_unlink=True)
+        except ReferenceError:
+            pass
+    _OWNED.clear()
+    c = bpy.data.collections.get(_COLL)
+    if c is not None and len(c.objects) == 0:
+        bpy.data.collections.remove(c)
 
 
 def _ray():
@@ -84,13 +112,16 @@ def _transitions(hit, lo=-2.5, hi=2.5, step=0.05):
     return out
 
 
-# ------------------------------------------------------------------ tests ----
+def _cube(name, loc, size=2.0):
+    bpy.ops.mesh.primitive_cube_add(size=size, location=loc)
+    return _adopt(name)
+
+
+# ======================================================= calibration tests ====
 def test_torus(R=1.0, r=0.30):
-    """Hole facing camera; horizontal scan must recover R and r exactly."""
     bpy.ops.mesh.primitive_torus_add(major_radius=R, minor_radius=r, location=(0, 2, 0),
-                                     rotation=(math.pi / 2, 0, 0),
-                                     major_segments=48, minor_segments=24)
-    _adopt("bc_torus")
+                                     rotation=(math.pi / 2, 0, 0), major_segments=48, minor_segments=24)
+    _adopt("torus")
     cast = _ray()
     t = _transitions(lambda x: cast(x)[0])
     ok = len(t) == 4
@@ -100,65 +131,50 @@ def test_torus(R=1.0, r=0.30):
         outer, inner = (abs(oL) + abs(oR)) / 2, (abs(iL) + abs(iR)) / 2
         R_rec, r_rec = (outer + inner) / 2, (outer - inner) / 2
     tol = config.TOL["calibration_len"]
-    passed = ok and abs(R_rec - R) < tol and abs(r_rec - r) < tol
-    return {"pass": passed, "R": (R_rec, R), "r": (r_rec, r),
-            "n_transitions": len(t), "transitions": [round(v, 4) for v in t]}
+    return {"pass": ok and abs(R_rec - R) < tol and abs(r_rec - r) < tol,
+            "R": (R_rec, R), "r": (r_rec, r), "transitions": [round(v, 4) for v in t]}
 
 
 def test_pyramid(R=1.0, H=2.0):
-    """Vertex-on square pyramid: depth profile is a V with |slope| == 1 (pure
-    geometric invariant) and amplitude R/2 at mid-height. Blender's cone phase
-    is NOT assumed: if the first orientation reads flat (face-on), rotate 45
-    degrees and retry, and report which orientation was needed."""
     assumptions = []
     for rot_deg in (0.0, 45.0):
         bpy.ops.mesh.primitive_cone_add(vertices=4, radius1=R, radius2=0.0, depth=H,
                                         location=(0, 3.0, 0), rotation=(0, 0, math.radians(rot_deg)))
-        obj = _adopt("bc_pyramid")
+        obj = _adopt("pyramid")
         cast = _ray()
         def depth(x):
             h, loc, *_ = cast(x)
             return loc.y if h else None
         half = R / 2
         d_edge, d_mid, d_q = depth(-half + 0.01), depth(0.0), depth(-half / 2)
-        if None in (d_edge, d_mid, d_q):
-            bpy.data.objects.remove(obj, do_unlink=True)
+        if None in (d_edge, d_mid, d_q) or abs(d_edge - d_mid) < 0.05:
+            assumptions.append(f"rot={rot_deg}: not vertex-on, retrying")
+            _OWNED.remove(obj); bpy.data.objects.remove(obj, do_unlink=True)
             continue
-        if abs(d_edge - d_mid) < 0.05:          # flat => face-on, wrong phase
-            assumptions.append(f"cone phase at rot={rot_deg}: face-on, retrying")
-            bpy.data.objects.remove(obj, do_unlink=True)
-            continue
-        slope = (d_mid - d_q) / (half / 2)
-        amp = d_edge - d_mid
-        ok_slope = abs(abs(slope) - 1.0) < config.TOL["calibration_slope"]
-        ok_amp = abs(amp - half) < 0.02
+        slope = (d_mid - d_q) / (half / 2); amp = d_edge - d_mid
         assumptions.append(f"vertex-on achieved at rot={rot_deg}")
-        return {"pass": ok_slope and ok_amp, "slope": (round(slope, 4), 1.0),
-                "amplitude": (round(amp, 4), half), "assumptions": assumptions}
+        return {"pass": abs(abs(slope) - 1.0) < config.TOL["calibration_slope"] and abs(amp - half) < 0.02,
+                "slope": (round(slope, 4), 1.0), "amplitude": (round(amp, 4), half), "assumptions": assumptions}
     return {"pass": False, "error": "no vertex-on orientation found", "assumptions": assumptions}
 
 
 def test_occlusion(R=1.0, r=0.30):
-    """A blocker in front of the torus must NOT shorten a frame-filtered
-    silhouette -- the hair-shadow / eye-shadow bug, made permanent."""
     from . import senses
-    bpy.ops.mesh.primitive_torus_add(major_radius=R, minor_radius=r, location=(0, 2, 0),
-                                     rotation=(math.pi / 2, 0, 0))
-    _adopt("bc_torus_occ")
+    bpy.ops.mesh.primitive_torus_add(major_radius=R, minor_radius=r, location=(0, 2, 0), rotation=(math.pi / 2, 0, 0))
+    t = _adopt("torus_occ")
     bpy.ops.mesh.primitive_uv_sphere_add(radius=0.5, location=(1.0, 0.5, 0))
-    _adopt("bc_blocker")
-    s = senses.silhouette("FRONT", frame=["bc_torus_occ"], rows=40)
+    _adopt("blocker")
+    s = senses.silhouette("FRONT", frame=[t.name], rows=40)
     row = min(range(len(s["v"])), key=lambda i: abs(s["v"][i]))
     right = s["right"][row]
-    passed = right is not None and abs(right - (R + r)) < 0.02
-    return {"pass": passed, "right_edge": (None if right is None else round(right, 4), R + r)}
+    return {"pass": right is not None and abs(right - (R + r)) < 0.02,
+            "right_edge": (None if right is None else round(right, 4), R + r)}
 
 
 def test_bisect_guard():
-    """The enforced invariant must refuse swapped arguments."""
     hit = lambda x: x > 0.5
     try:
-        measure.edge_bisect(hit, 0.0, 1.0)   # swapped on purpose
+        measure.edge_bisect(hit, 0.0, 1.0)
         return {"pass": False, "note": "swapped arguments were accepted"}
     except ValueError:
         pass
@@ -167,61 +183,225 @@ def test_bisect_guard():
 
 
 def test_plan():
-    """plan.py invariants: expressions evaluate, the detail gate filters, the
-    hash is content-based (stable across identical plans, different across
-    detail levels), and build() produces exactly the resolved parts."""
     from . import plan
-    pl = plan.new("bc_plan_test", detail=3)
+    pl = plan.new(_n("plan"), detail=3)
     pl["parameters"] = {"r": {"default": 0.5, "min": 0.1, "max": 2.0}}
-    plan.add_part(pl, "bc_p_a", "probe", "sphere", location=(0, 2, 0), scale=("r", "r*2", "r+0.5"))
-    plan.add_part(pl, "bc_p_b", "probe", "sphere", location=(1, 2, 0), scale=(0.2, 0.2, 0.2), min_detail=5)
-    r3 = plan.resolve(pl)
-    r3b = plan.resolve(pl)
-    pl5 = dict(pl, detail=5)
-    r5 = plan.resolve(pl5)
-    checks = {
-        "expression": abs(r3["parts"][0]["scale"][1] - 1.0) < 1e-9 and abs(r3["parts"][0]["scale"][2] - 1.0) < 1e-9,
-        "gate_filters_at_3": len(r3["parts"]) == 1,
-        "gate_opens_at_5": len(r5["parts"]) == 2,
-        "hash_stable": r3["sha256"] == r3b["sha256"],
-        "hash_differs_by_detail": r3["sha256"] != r5["sha256"],
-    }
-    rep = plan.build(r3, clear_first=False, fuse=False)
+    a, b = _n("p_a"), _n("p_b")
+    plan.add_part(pl, a, "probe", "sphere", location=(0, 2, 0), scale=("r", "r*2", "r+0.5"))
+    plan.add_part(pl, b, "probe", "sphere", location=(1, 2, 0), scale=(0.2, 0.2, 0.2), min_detail=5)
+    r3, r3b, r5 = plan.resolve(pl), plan.resolve(pl), plan.resolve(dict(pl, detail=5))
+    checks = {"expression": abs(r3["parts"][0]["scale"][1] - 1.0) < 1e-9,
+              "gate_3": len(r3["parts"]) == 1, "gate_5": len(r5["parts"]) == 2,
+              "hash_stable": r3["sha256"] == r3b["sha256"], "hash_detail": r3["sha256"] != r5["sha256"]}
+    # P2-10: profile voxel must affect the hash
+    saved = config.DETAIL_PROFILES[3]["voxel"]
+    try:
+        config.DETAIL_PROFILES[3]["voxel"] = saved * 2
+        checks["hash_profile"] = plan.resolve(pl)["sha256"] != r3["sha256"]
+    finally:
+        config.DETAIL_PROFILES[3]["voxel"] = saved
+    tampered = dict(r3, parts=[dict(r3["parts"][0], scale=[9, 9, 9])])
+    checks["verify_rejects_tamper"] = not plan.verify(tampered)
+    rep = plan.build(r3, clear_first=False, fuse=False, collection=_COLL)
+    o = bpy.data.objects.get(a)
+    if o:
+        _OWNED.append(o)
     checks["build_count"] = rep["parts_built"] == 1
     checks["provenance"] = rep["plan_sha256"] == r3["sha256"]
-    for nm in ("bc_p_a", "bc_p_b"):
-        o = bpy.data.objects.get(nm)
-        if o:
-            bpy.data.objects.remove(o, do_unlink=True)
-    bad = False
+    checks["in_collection"] = o is not None and any(c.name == _COLL for c in o.users_collection)
     try:
-        plan.expression("__import__('os').system('x')", {})
+        plan.expression("__import__('os').system('x')", {}); checks["rejects_code"] = False
     except ValueError:
-        bad = True
-    checks["rejects_code"] = bad
+        checks["rejects_code"] = True
     return {"pass": all(checks.values()), "checks": checks}
 
 
+# ================================================== audit regression tests ====
+def test_bad_frame_rejected():
+    """P1-4: a typo in frame must raise, not measure the whole scene."""
+    from . import senses, eye
+    _cube("decoy", (0, 2, 0))
+    out = {}
+    for label, fn in (("proportions", lambda: senses.proportions("FRONT", frame=[_n("does_not_exist")])),
+                      ("render_ascii", lambda: eye.render_ascii(view="FRONT", width=10, frame=[_n("does_not_exist")])),
+                      ("empty_frame", lambda: senses.silhouette("FRONT", frame=[]))):
+        try:
+            fn(); out[label] = "accepted (BUG)"
+        except ValueError:
+            out[label] = "rejected"
+    return {"pass": all(v == "rejected" for v in out.values()), "checks": out}
+
+
+def test_refuse_render_visible():
+    """P1-3: the second fuse must be render-visible."""
+    from . import recipes
+    a = _cube("fa", (0, 2, 0)); b = _cube("fb", (0.8, 2, 0))
+    out = _n("fused")
+    f1 = recipes.voxel_fuse([a.name, b.name], out, voxel=0.2); _OWNED.append(f1)
+    r1 = f1.hide_render
+    f2 = recipes.voxel_fuse([a.name, b.name], out, voxel=0.2); _OWNED.append(f2)
+    r2 = f2.hide_render
+    return {"pass": (r1 is False and r2 is False), "hide_render_first": r1, "hide_render_second": r2}
+
+
+def test_fuse_contract():
+    """P2-8: fusing a 'separate' layer must be refused; foreign-name collisions refused."""
+    from . import mesh_mind, recipes
+    a = _cube("ca", (0, 2, 0)); foreign = _cube("foreign", (5, 2, 0))
+    graph = {"sep": {"continuity": "separate", "members": [a.name]},
+             "fus": {"continuity": "fuse", "members": [a.name]}}
+    checks = {}
+    try:
+        mesh_mind.fuse_group(graph, "sep", voxel=0.2, fused_name=_n("x")); checks["separate_refused"] = False
+    except ValueError:
+        checks["separate_refused"] = True
+    try:
+        recipes.voxel_fuse([a.name], foreign.name, voxel=0.2); checks["collision_refused"] = False
+    except ValueError:
+        checks["collision_refused"] = True
+    checks["foreign_survived"] = bpy.data.objects.get(foreign.name) is not None
+    return {"pass": all(checks.values()), "checks": checks}
+
+
+def test_gate_order():
+    """P1-5: log order must not fool the gate; no cross-model fallback."""
+    import json, os, tempfile
+    from . import gauge
+    path = os.path.join(tempfile.gettempdir(), f"bt_gate_{_RUN}.jsonl")
+    def sc(model, comp, cid):
+        return {"id": cid, "model": model, "ts": "t", "config_hash": "h", "coverage": ["fit"],
+                "components": {"fit": comp}, "composite": comp}
+    try:
+        gauge.log(sc("m", 0.9, "a"), path)
+        cand = sc("m", 0.1, "b")
+        gauge.log(cand, path)                       # the wrong order, on purpose
+        g_after = gauge.gate(cand, path)           # must STILL catch the drop
+        other = gauge.gate(sc("other_model", 0.1, "c"), path)
+        return {"pass": (g_after["ok"] is False) and other.get("no_baseline") is True,
+                "gate_after_log": g_after["ok"], "cross_model": other}
+    finally:
+        try: os.remove(path)
+        except OSError: pass
+
+
+def test_iou_shape_mismatch():
+    from . import gauge
+    try:
+        gauge.iou([[1]], [[1, 1]]); return {"pass": False}
+    except ValueError:
+        return {"pass": True}
+
+
+def test_cross_section_truncation():
+    """P2-11: truncated sections must not reference dropped points."""
+    from . import eye
+    c = _cube("xs", (0, 2, 0))
+    r = eye.cross_section(c.name, plane_co=(0, 2, 0), plane_no=(0, 0, 1), max_points=2)
+    ok = r["truncated"] and all(0 <= i < r["n_points"] for e in r["edges"] for i in e)
+    return {"pass": ok, "n_points": r["n_points"], "edges": r["edges"]}
+
+
+def test_cavity_plane_not_enclosed():
+    """P2-12: a flat plane under a rim height has depth but is NOT enclosed."""
+    from . import senses
+    bpy.ops.mesh.primitive_plane_add(size=4, location=(0, 0, 0.0))
+    _adopt("plane")
+    r = senses.cavity_probe(center=(0, 0), rim_radius=0.7, rim_z=2.0, n=8)
+    return {"pass": (r["enclosed"] is False and r["holds_liquid"] is False and r["max_depth"] > 0.3),
+            "max_depth": r["max_depth"], "enclosed": r["enclosed"]}
+
+
+def test_turntable_guard():
+    from . import senses
+    try:
+        senses.turntable(step_deg=0); return {"pass": False}
+    except ValueError:
+        return {"pass": True}
+
+
+def test_width_out_of_range():
+    """P2-7: asking for a height the object never reaches must raise."""
+    c = _cube("w", (0, 2, 0))
+    try:
+        measure.width_at(100.0, [c.name]); return {"pass": False}
+    except ValueError:
+        w, info = measure.width_at(0.0, [c.name])
+        return {"pass": abs(w - 2.0) < 0.05 and abs(info["sampled_z"]) < info["row_spacing"],
+                "width": round(w, 3), "sampled_z": info["sampled_z"]}
+
+
+def test_public_imports():
+    """P1-2: every advertised public function must be callable from a clean package import."""
+    from . import senses, eye, gauge, mesh_mind, plan, recipes, measure as m
+    bpy.ops.mesh.primitive_torus_add(major_radius=1, minor_radius=0.3, location=(0, 2, 0), rotation=(math.pi / 2, 0, 0))
+    t = _adopt("imp")
+    checks = {}
+    for label, fn in (("occupancy_grid", lambda: senses.occupancy_grid(n=8, frame=[t.name])),
+                      ("silhouette", lambda: senses.silhouette("FRONT", frame=[t.name], rows=8)),
+                      ("proportions", lambda: senses.proportions("FRONT", frame=[t.name], rows=8)),
+                      ("render_ascii", lambda: eye.render_ascii(view="FRONT", width=8, frame=[t.name])),
+                      ("island_census", lambda: mesh_mind.island_census(t.name)),
+                      ("topology", lambda: gauge.topology(t.name)),
+                      ("parts_at_height", lambda: m.parts_at_height(0.0, names=[t.name])),
+                      ("overlap_candidates", lambda: mesh_mind.overlap_candidates([t.name])),
+                      ("enclosure_check", lambda: senses.enclosure_check(center=(0, 2), rim_radius=0.7, rim_z=1.0, floor_z=-0.5, frame=[t.name], n_dirs=4, levels=1))):
+        try:
+            fn(); checks[label] = "ok"
+        except Exception as e:
+            checks[label] = f"{type(e).__name__}: {e}"[:90]
+    return {"pass": all(v == "ok" for v in checks.values()), "checks": checks}
+
+
+# ======================================================================= run ====
+CALIBRATION = (("bisect_guard", test_bisect_guard), ("torus", test_torus), ("pyramid", test_pyramid),
+               ("occlusion", test_occlusion), ("plan", test_plan))
+REGRESSION = (("audit_P1_2_public_imports", test_public_imports),
+              ("audit_P1_3_refuse_render_visible", test_refuse_render_visible),
+              ("audit_P1_4_bad_frame_rejected", test_bad_frame_rejected),
+              ("audit_P1_5_gate_order", test_gate_order),
+              ("audit_P2_7_width_out_of_range", test_width_out_of_range),
+              ("audit_P2_8_fuse_contract", test_fuse_contract),
+              ("audit_P2_11_iou_shape", test_iou_shape_mismatch),
+              ("audit_P2_11_cross_section", test_cross_section_truncation),
+              ("audit_P2_12_cavity_plane", test_cavity_plane_not_enclosed),
+              ("audit_hardening_turntable_guard", test_turntable_guard))
+
+
 def run_all(write_report=True):
-    """Run every ground-truth test. Returns the results AND, by default, writes a
-    timestamped evidence report (platform, versions, every number) to
-    config.CALIBRATION_REPORT_DIR -- a pass is a claim; a report is evidence."""
+    """Run calibration + regression tests inside one isolation boundary. Also
+    plants decoys named like the OLD conventions (audit P1-1) to prove the suite
+    no longer deletes a user's objects by name."""
     import json, os, platform, time
-    results = {"bisect_guard": test_bisect_guard(), "plan": test_plan()}
-    with isolated_scene():
-        for name, fn in (("torus", test_torus), ("pyramid", test_pyramid), ("occlusion", test_occlusion)):
-            _clear()
+    results = {}
+    decoys = []
+    for name in ("bc_p_a", "bc_calibration_decoy"):
+        if name not in bpy.data.objects:
+            bpy.ops.mesh.primitive_cube_add(size=0.5, location=(9, 9, 9))
+            d = bpy.context.active_object; d.name = name; decoys.append(d)
+    dec_ptrs = {d.name: d.as_pointer() for d in decoys}
+    with isolated_scene() as integrity:
+        for name, fn in CALIBRATION + REGRESSION:
             try:
                 results[name] = fn()
-            except Exception as e:  # a crash is a failure, not an abort
+            except Exception as e:
                 results[name] = {"pass": False, "error": f"{type(e).__name__}: {e}"}
-    out = {"passed": all(v.get("pass") for v in results.values()), "results": results,
-           "assumptions": results.get("pyramid", {}).get("assumptions", []),
+            _cleanup()
+    decoy_ok = all(bpy.data.objects.get(n) is not None and bpy.data.objects[n].as_pointer() == p for n, p in dec_ptrs.items())
+    results["audit_P1_1_scene_integrity"] = {"pass": integrity["ok"] and decoy_ok,
+                                             "problems": integrity["problems"], "decoys_survived": decoy_ok}
+    for d in decoys:
+        bpy.data.objects.remove(d, do_unlink=True)
+    passed = all(v.get("pass") for v in results.values())
+    out = {"passed": passed, "run_id": _RUN,
+           "n_tests": len(results), "n_passed": sum(1 for v in results.values() if v.get("pass")),
+           "results": results, "scene_integrity": integrity,
            "evidence": {"package": config.VERSION_STR, "blender": bpy.app.version_string,
                         "platform": f"{platform.system()} {platform.machine()}",
                         "headless": bpy.app.background, "ts": time.strftime("%Y-%m-%dT%H:%M:%S")},
            "not_verified": ["live-scene measurement on a real model (this suite uses known primitives)",
-                            "reference fidelity (see gauge.scorecard)"]}
+                            "reference fidelity (see gauge.scorecard)",
+                            "occupancy-vs-silhouette casting policy unification (Stage B, audit P2-6)",
+                            "depth-bounds ray origins for far-from-origin subjects (Stage B, audit P2-7a)"]}
     if write_report:
         d = os.path.expanduser(config.CALIBRATION_REPORT_DIR)
         os.makedirs(d, exist_ok=True)

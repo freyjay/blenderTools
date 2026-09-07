@@ -26,20 +26,31 @@ def voxel_fuse(part_names, out_name, voxel=None, color=None):
     editable; re-run to re-fuse after part edits (mesh_mind.fuse_group wraps
     this with the graph contract)."""
     voxel = voxel or config.VOXEL_FINE
+    # Validate BEFORE any mutation (audit P2-8).
+    missing = [n for n in part_names if n not in bpy.data.objects]
+    if missing or not part_names:
+        raise ValueError(f"voxel_fuse: unknown parts {missing or '(none given)'}")
+    parts = [bpy.data.objects[n] for n in part_names]
     old = bpy.data.objects.get(out_name)
-    if old:
+    if old is not None:
+        if old.get("bt_owner") != "fuse":
+            raise ValueError(f"voxel_fuse: '{out_name}' exists and is not a fuse result -- refusing to overwrite")
         bpy.data.objects.remove(old, do_unlink=True)
-    parts = [bpy.data.objects[n] for n in part_names if n in bpy.data.objects]
     bpy.ops.object.select_all(action='DESELECT')
     dups = []
     for o in parts:
         d = o.copy(); d.data = o.data.copy()
         bpy.context.collection.objects.link(d)
-        d.hide_set(False); d.select_set(True); dups.append(d)
+        # copies inherit the stash's hidden flags -- reset BOTH (audit P1-3)
+        d.hide_set(False); d.hide_render = False; d.hide_viewport = False
+        d.select_set(True); dups.append(d)
     bpy.context.view_layer.objects.active = dups[0]
     bpy.ops.object.join()
     f = bpy.context.active_object
     f.name = out_name
+    f.hide_set(False); f.hide_render = False; f.hide_viewport = False
+    f["bt_owner"] = "fuse"
+    f["bt_fused_from"] = ",".join(part_names)
     rm = f.modifiers.new("Remesh", 'REMESH')
     rm.mode, rm.voxel_size = 'VOXEL', voxel
     bpy.ops.object.modifier_apply(modifier="Remesh")

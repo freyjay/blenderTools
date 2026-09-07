@@ -99,3 +99,12 @@ case studies behind every doctrine line.
     before trusting it on organic/approximate work.
 14. When ambiguous whether model or reference is wrong, build a ground-truth
     primitive (known R, r, H, angle) and test the INSTRUMENT there first.
+
+15. Test the failure paths, not the demo path. Every public function gets a
+    clean-interpreter import-and-call test; every destructive operation gets a
+    pre/post scene-identity check with planted decoys; every reproduced external
+    finding becomes a regression test before it is closed. A suite that only
+    exercises the path its author imagined will pass while a stranger's first
+    call crashes (external audit of v0.6.0: 12 reproduced defects, 5/5 passing).
+16. Patch anchors are REQUIRED. A text edit that silently no-ops when its anchor
+    is missing is how a stale import survived a rename. Abort loudly instead.

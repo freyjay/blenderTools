@@ -47,9 +47,9 @@ Before and after any modeling pass:
 ```python
 from blendertools import gauge, refs
 sc = gauge.scorecard("<model_id>", frame_face=[...], ref_grid_front=gauge.spans_to_grid(refs.BOY_FRONT_SPANS_30))
-gauge.log(sc); gauge.compare_to_last(sc)
+gauge.gate(sc); gauge.log(sc)   # gate BEFORE log
 ```
-"Better" means the composite went up and `regressions` is empty. Nothing else counts.
+"Better" means gate() reports no regressions against a compatible baseline; the composite is one lens, not the verdict.
 
 ## The one loop
 compare output to the REFERENCE (fresh, not cached) → find distinctions with

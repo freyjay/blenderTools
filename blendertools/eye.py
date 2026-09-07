@@ -79,6 +79,10 @@ def render_ascii(view="FRONT", width=72, height=None, mode="id",
     """
     forward, right, up_s = _basis(view)
     objs = _targets(frame)
+    if frame is not None:
+        missing = sorted(set(frame) - {o.name for o in objs})
+        if not list(frame) or missing:
+            raise ValueError(f"render_ascii: frame names not found or not visible: {missing or '(empty frame)'} (audit P1-4)")
     cu, cv, eu, ev = _bounds(objs, right, up_s)
     if center is not None:
         cu, cv = center
@@ -219,11 +223,13 @@ def cross_section(object_name, plane_co=(0, 0, 0), plane_no=(0, 0, 1),
     ax_v = no.cross(ax_u).normalized()
 
     idx = {v: i for i, v in enumerate(cut_verts)}
-    pts = [(round((v.co - co).dot(ax_u), 4), round((v.co - co).dot(ax_v), 4))
-           for v in cut_verts][:max_points]
+    keep = cut_verts[:max_points]
+    idx = {v: i for i, v in enumerate(keep)}
+    pts = [(round((v.co - co).dot(ax_u), 4), round((v.co - co).dot(ax_v), 4)) for v in keep]
     edges = [(idx[e.verts[0]], idx[e.verts[1]]) for e in cut_edges
-             if e.verts[0] in idx and e.verts[1] in idx][:max_points]
+             if e.verts[0] in idx and e.verts[1] in idx]
+    truncated = len(cut_verts) > len(keep)
     bm.free()
     obj.evaluated_get(deps).to_mesh_clear()
-    return {"points_2d": pts, "edges": edges,
-            "n_points": len(pts), "plane_co": tuple(co), "plane_no": tuple(no)}
+    return {"points_2d": pts, "edges": edges, "n_points": len(pts), "truncated": truncated,
+            "n_points_total": len(cut_verts), "plane_co": tuple(co), "plane_no": tuple(no)}

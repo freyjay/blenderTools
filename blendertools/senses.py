@@ -25,7 +25,14 @@ def _caster(frame):
     deps = bpy.context.evaluated_depsgraph_get()
     scene = bpy.context.scene
     objs = _targets(frame)
-    names = {o.name for o in objs} if frame else None
+    names = None
+    if frame is not None:
+        requested = list(frame)
+        missing = sorted(set(requested) - {o.name for o in objs})
+        if not requested or missing:
+            raise ValueError(f"frame names not found or not visible: {missing or '(empty frame)'} -- "
+                             "an unresolved frame must not silently measure the whole scene (audit P1-4)")
+        names = set(requested)
 
     def cast(origin, direction, _bounces=0):
         hit, loc, nrm, _i, obj, _m = scene.ray_cast(deps, origin, direction)
@@ -134,6 +141,10 @@ def contour_angles(view="RIGHT", frame=None, rows=64, corner_deg=25.0):
 
 def turntable(step_deg=18.0, frame=None, rows=40):
     """Stage 3: rotate the viewpoint around Z at fixed intervals; track the form."""
+    if not (0 < float(step_deg) <= 180.0):
+        raise ValueError(f"turntable: step_deg must be in (0, 180], got {step_deg}")
+    if int(rows) < 4:
+        raise ValueError("turntable: rows must be >= 4")
     table = []
     a = 0.0
     while a < 360.0 - 1e-6:
@@ -215,12 +226,17 @@ def cavity_probe(center=(0.0, 0.0), rim_radius=0.7, rim_z=2.1, n=14, frame=None)
             if h:
                 depths.append(max(0.0, rim_z - h[0].z))
     if not depths:
-        return {"holds_liquid": False, "max_depth": 0.0, "volume_units3": 0.0}
+        return {"holds_liquid": False, "enclosed": False, "max_depth": 0.0, "volume_units3_estimate": 0.0,
+                "assumptions": ["no interior surface hit below the rim"]}
     vol = sum(d * cell for d in depths)
     mx = max(depths)
-    return {"holds_liquid": mx > 0.3, "max_depth": round(mx, 2),
-            "mean_depth": round(sum(depths) / len(depths), 2),
-            "volume_units3": round(vol, 2)}
+    enc = enclosure_check(center, rim_radius, rim_z, rim_z - mx, frame=frame)
+    return {"max_depth": round(mx, 2), "mean_depth": round(sum(depths) / len(depths), 2),
+            "volume_units3_estimate": round(vol, 2), "enclosed": enc["enclosed"], "enclosure": enc,
+            "holds_liquid": bool(enc["enclosed"] and mx > 0.3),
+            "assumptions": ["vertical depth sampling inside the rim circle",
+                            "enclosure = radial rays from interior points hit a wall within 1.5x rim radius",
+                            "no watertightness, leak-path or units check -- an estimate, not an engineering verdict"]}
 
 
 def width_bands(view="FRONT", frame=None, z_top=1.10, z_bot=-1.15, bands=10, rows=64):
@@ -247,7 +263,8 @@ def occupancy_grid(view="FRONT", n=30, frame=None, center=None, extent=None):
     re-frames every call, so auto-fit grids from different moments are NOT
     cell-comparable (D1 class: never compare over different spans).
     Returns grid + its window (center, extent, n, view) for reuse."""
-    import bpy, eye
+    import bpy
+    from . import eye
     from mathutils import Vector
     if center is None or extent is None:
         _f, right, up_s = eye._basis(view)
@@ -321,7 +338,8 @@ def attribute(grid, cells, stash=None, margin=0.02):
     Fusion erases ray attribution (ledger finding 3); projected-bbox
     containment on the hidden part stash is the proven diagnostic. Ranked:
     inside-first, then gap distance. z-height alone is a guess -- never again."""
-    import bpy, eye
+    import bpy
+    from . import eye
     from mathutils import Vector
     _f, right, up_s = eye._basis(grid.get("view", "FRONT"))
     if stash is None:
@@ -429,3 +447,24 @@ def perception_floor(view="FRONT", frame=None, n=30, trials=4):
             "cell_world_units": round(cell, 4),
             "width_band_floor": round(wb_floor, 3),
             "note": "distinction <= floor is inside instrument noise"}
+
+
+def enclosure_check(center=(0.0, 0.0), rim_radius=0.7, rim_z=2.1, floor_z=0.2, frame=None, n_dirs=16, levels=3):
+    """Are there WALLS? From interior points at several heights between floor and
+    rim, cast rays radially outward; each must hit a surface within 1.5 x rim_radius.
+    A flat plane under a rim height has depth but no enclosure (audit P2-12)."""
+    cast, _ = _caster(frame)
+    escapes, hits = [], 0
+    for k in range(levels):
+        z = floor_z + (rim_z - floor_z) * (k + 0.5) / levels
+        for i in range(n_dirs):
+            a = 2 * math.pi * i / n_dirs
+            d = Vector((math.cos(a), math.sin(a), 0.0))
+            h = cast(Vector((center[0], center[1], z)), d)
+            if h and (h[0] - Vector((center[0], center[1], z))).length <= 1.5 * rim_radius:
+                hits += 1
+            else:
+                escapes.append({"z": round(z, 3), "deg": round(math.degrees(a), 1)})
+    total = n_dirs * levels
+    return {"enclosed": not escapes, "wall_hits": hits, "rays": total, "escapes": escapes[:8],
+            "escape_fraction": round(len(escapes) / total, 3)}

@@ -39,8 +39,10 @@ def _bbox_overlap(a, b, pad=0.0):
 
 
 def connectivity_check(members):
-    """BEFORE fusing: prove the group is one connected component via
-    pairwise overlap graph. Returns components (each a list of names)."""
+    """BROAD-PHASE ONLY: pairwise world-AABB overlap graph. Overlapping boxes do NOT
+    prove touching surfaces (two unit spheres at distance 2.12 overlap as boxes).
+    Use this to find candidates; prove connectivity AFTER fusing with island_census
+    (audit P2-9). Returns components (each a list of names)."""
     objs = [bpy.data.objects[m] for m in members if m in bpy.data.objects]
     n = len(objs)
     adj = {i: set() for i in range(n)}
@@ -96,18 +98,34 @@ def fuse_group(graph, group, voxel=0.05, fused_name=None):
     """Fuse ONE continuity group only; everything else untouched.
     Members stay stashed (hidden) for future part-level adjustment."""
     fused_name = fused_name or (group.capitalize() + "Fused")
-    if fused_name in bpy.data.objects:
-        bpy.data.objects.remove(bpy.data.objects[fused_name], do_unlink=True)
-    members = [bpy.data.objects[m] for m in graph[group]["members"] if m in bpy.data.objects]
+    spec = graph.get(group)
+    if spec is None:
+        raise ValueError(f"fuse_group: unknown layer '{group}'")
+    if spec.get("continuity") != "fuse":
+        raise ValueError(f"fuse_group: layer '{group}' is declared continuity={spec.get('continuity')!r}; "
+                         "refusing to fuse a 'separate' layer (audit P2-8)")
+    wanted = list(spec.get("members", []))
+    missing = [m for m in wanted if m not in bpy.data.objects]
+    if not wanted or missing:
+        raise ValueError(f"fuse_group: members not found: {missing or '(none declared)'}")
+    existing = bpy.data.objects.get(fused_name)
+    if existing is not None:
+        if existing.get("bt_owner") not in ("mesh_mind", "fuse"):
+            raise ValueError(f"fuse_group: '{fused_name}' exists and is not a fuse result -- refusing to overwrite")
+        bpy.data.objects.remove(existing, do_unlink=True)
+    members = [bpy.data.objects[m] for m in wanted]
     bpy.ops.object.select_all(action='DESELECT')
     dups = []
     for o in members:
         d = o.copy(); d.data = o.data.copy()
         bpy.context.collection.objects.link(d)
-        d.hide_set(False); d.select_set(True); dups.append(d)
+        d.hide_set(False); d.hide_render = False; d.hide_viewport = False
+        d.select_set(True); dups.append(d)
     bpy.context.view_layer.objects.active = dups[0]
     bpy.ops.object.join()
     f = bpy.context.active_object; f.name = fused_name
+    f.hide_set(False); f.hide_render = False; f.hide_viewport = False
+    f["bt_owner"] = "mesh_mind"; f["bt_fused_from"] = ",".join(wanted)
     rm = f.modifiers.new("Remesh", 'REMESH')
     rm.mode = 'VOXEL'; rm.voxel_size = voxel
     bpy.ops.object.modifier_apply(modifier="Remesh")
@@ -119,3 +137,7 @@ def fuse_group(graph, group, voxel=0.05, fused_name=None):
     for o in members:
         o.hide_set(True); o.hide_render = True
     return fused_name
+
+
+# audit P2-9: honest alias -- prefer this name
+overlap_candidates = connectivity_check

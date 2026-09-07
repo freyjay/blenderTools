@@ -74,7 +74,7 @@ perfectly fine on the human's own screen. Reference images the user uploads
 directly (not screenshots Claude requests from Blender) are unaffected and
 arrive fine.
 
-Do not rely on the screenshot tools for verifying geometry. This project
+Do not rely on the official MCP screenshot tools for verifying geometry -- this is a limit of THAT transport, not a universal ban on images. Renders written to disk for the human reviewer are fine, and other bridges that return usable PNGs may use them. This project
 exists specifically to route around this limitation: `eye.py` renders the
 scene as text (ASCII), which always survives transport intact. Use that
 instead. See `skills/blender-connect/SKILL.md`.

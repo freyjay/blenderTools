@@ -82,13 +82,21 @@ def width_at(z, frame, view="FRONT", rows=56):
         raise ValueError("width_at: frame must name the objects being measured")
     from . import senses
     s = senses.silhouette(view, frame=frame, rows=rows)
+    vs = s["v"]
+    spacing = abs(vs[1] - vs[0]) if len(vs) > 1 else float("inf")
     best, bw = None, 0.0
-    for L, R, v in zip(s["left"], s["right"], s["v"]):
+    for L, R, v in zip(s["left"], s["right"], vs):
         if L is None:
             continue
         if best is None or abs(v - z) < abs(best - z):
             best, bw = v, R - L
-    return bw, parts_at_height(z, names=frame, include_hidden=True)
+    if best is None:
+        raise ValueError("width_at: no occupied rows in this frame")
+    if abs(best - z) > spacing:   # nearest occupied row is not at the requested height (audit P2-7)
+        raise ValueError(f"width_at: z={z} is outside the occupied range; nearest occupied row is z={best:.3f}")
+    info = {"contributors": parts_at_height(z, names=frame, include_hidden=True),
+            "requested_z": z, "sampled_z": round(best, 4), "row_spacing": round(spacing, 4), "frame": list(frame)}
+    return bw, info
 
 
 def ratio(num, den, name="", canon=None):

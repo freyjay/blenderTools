@@ -7,7 +7,7 @@ Installed via symlink into Blender's scripts/modules; in any session:
     bt.reload()                 # after editing any submodule; dependency-ordered
 """
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 import importlib as _importlib
 
@@ -57,7 +57,7 @@ def doctor():
         "headless": bpy.app.background,
         "modules": {n: hasattr(pkg, n) for n in _SUBMODULES},
         "config_overrides": config.overrides_path_if_present(),
-        "socket_patch": patch_status(),
+        "socket_patch": patch_status(),   # source-marker detection, NOT a transport test
         "plans_dir": os.path.expanduser(config.PLANS_DIR),
         "not_verified_by_doctor": [
             "live MCP round-trip (doctor cannot tell if it was called over MCP or headless)",
