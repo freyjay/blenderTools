@@ -1,0 +1,98 @@
+{
+  "subject": "boy",
+  "date": "2026-09-07",
+  "source": "three stylized renders supplied by the client (front, right profile, back three-quarter), 2048x2048, grey vignette background",
+  "registration": "bbox-normalized: silhouette window = square around the figure bbox padded 3% (the rule senses.occupancy_grid uses for auto-fit). Scale/translation-invariant; sensitive to extreme tips (hair, collar). The figure touches the top (hair) and bottom (collar) edges in every view; the renders share one camera framing.",
+  "segmentation": "measured: background sat <= 0.039, lum 0.50-0.55 with a vignette darkening toward the lower-right corner (a luminance-low rule produced a false stripe there and was dropped). Rule: sat > 0.045 OR lum > 0.60 (linear RGB as read by Blender).",
+  "views": {
+    "FRONT": {
+      "file": "boy_front.jpg",
+      "sha256": "bf947373b2072dd3",
+      "size": [
+        2048,
+        2048
+      ],
+      "figure_bbox_px": [
+        304,
+        0,
+        1758,
+        2047
+      ],
+      "window_px": {
+        "cx": 1031.0,
+        "cy": 1023.5,
+        "half": 1054.2
+      },
+      "foreground_fraction": 0.4679,
+      "cells32": 468,
+      "cells64": 1847,
+      "landmarks_px": {
+        "eyeL_center": [
+          769,
+          1237
+        ],
+        "eyeR_center": [
+          1294,
+          1242
+        ],
+        "eye_line_y": 1239,
+        "width_at_eye_line_ear_inclusive": 1354,
+        "figure_height": 2047,
+        "blue_eye_width_L": 236.0
+      },
+      "ratios_from_reference": {
+        "eye_center_span_over_W": 0.3874,
+        "eye_line_from_top_over_H_figure": 0.6053,
+        "W_ear_inclusive_over_H_figure": 0.6615,
+        "blue_eye_width_over_W": 0.1743,
+        "_note": "W is ear-inclusive at the eye line; H_figure spans hair tip to the frame bottom (collar), not chin. 'blue eye' = iris+glow ring, the visible blue disc."
+      }
+    },
+    "RIGHT": {
+      "file": "boy_right.jpg",
+      "sha256": "4256fa9f64fce703",
+      "size": [
+        2048,
+        2048
+      ],
+      "figure_bbox_px": [
+        272,
+        0,
+        1831,
+        2047
+      ],
+      "window_px": {
+        "cx": 1051.5,
+        "cy": 1023.5,
+        "half": 1054.2
+      },
+      "foreground_fraction": 0.4944,
+      "cells32": 483,
+      "cells64": 1937
+    },
+    "BACK34": {
+      "file": "boy_back34.jpg",
+      "sha256": "a94eaf8a26ce6542",
+      "size": [
+        2048,
+        2048
+      ],
+      "figure_bbox_px": [
+        248,
+        18,
+        1718,
+        2047
+      ],
+      "window_px": {
+        "cx": 983.0,
+        "cy": 1032.5,
+        "half": 1044.9
+      },
+      "foreground_fraction": 0.4667,
+      "cells32": 468,
+      "cells64": 1864
+    }
+  },
+  "post_processing": "interior holes filled at grid level (flood fill from the border); silhouettes are outline-only by definition",
+  "finding": "reference eye_center_span_over_W = 0.387; canon default was 0.43; boy_v3 measured 0.389 and was penalized for matching the reference. Use reference-derived ratios, never canon."
+}

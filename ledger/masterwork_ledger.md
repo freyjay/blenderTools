@@ -283,3 +283,12 @@ jaw +10% -0.031 with a live staged re-fuse that replaced the prior result. The I
 target is now stated as a pair with ratio tolerances. Live-context defects fixed in
 plan.build, preflight and eye._targets; suite 29/29 before commit. Mistake recorded:
 the reference PNGs carry the silhouette in ALPHA (no World in an empty scene).
+
+
+## 2026-09-07 -- boy references registered
+Three client renders on disk with digests; registration manifest built from
+measurement (background sat <= 0.039, lum 0.50-0.55; a luminance-low rule produced
+a false stripe from the vignette and was dropped; final rule sat > 0.045 or lum >
+0.60). Silhouette grids n=32/64, bbox-normalized, holes filled. Finding: the
+reference's eye span is 0.387 of W; canon said 0.43; v3 measured 0.389 and was
+penalized for being right. Reference-derived ratios from here on.

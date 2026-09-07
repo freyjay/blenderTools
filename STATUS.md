@@ -71,7 +71,7 @@ Status marks: `[x]` built and tested · `[~]` built, never executed · `[!]` bui
 - [x] One live MCP round-trip of the suite — 2026-09-07, `calibration-2026-09-07T124543.json`, `headless: false`, 29/29, scene integrity ok. Also: the audit's Edit-Mode scenario reproduced live and **refused** by preflight. (`not_verified` text in code updated in v0.9.1.)
 - [x] `bt.plan.capture("boy_v3", …)` → `plans/boy_v3.json` — 64 parts, 6 layers, sha `cad4416a…`; shapes recorded as spheres (stated in notes); `JawBlend` declared in graph but absent, skipped
 - [~] First scorecards taken on the same ruler: **v1 0.6151 · v2 0.8425 · v3 0.7401** (logged, ids 6e94b56a / 2eabf9ca / 5eb8b2ea). **Approval deliberately withheld**: all three predate the instruments; v3 regressed from v2 and nothing caught it. The baseline must be the loop's own first output — see the zero step below.
-- [ ] **Zero step**: write the brief (a client-style request); save the five reference images to `refs/boy/`; I build the registration manifest (face box, eye line, scale per image) — *you + agent*
+- [~] **Zero step**: three references saved to `refs/boy/` (front, right profile, back ¾; digests in `manifest.json`), registration manifest built (bbox-normalized window, segmentation rule measured not guessed, eye landmarks, reference-derived ratios, grids at n=32/64, holes filled). **Still needed: the brief** (your paragraph) and, if they exist, the left profile and true back views — *you*
 - [ ] **Generator adapter**: `recipes.generate` (Meshy or Rodin REST API, multi-image), `plan.add_generated_part` recording job id / input hashes / parameters / output hash, GLB import into the build collection, tests — *agent*
 - [ ] API key (Meshy first; Rodin if likeness disappoints) — *you*
 - [ ] **First generated baseline**: five references in → mesh out → imported with provenance → scorecard against the same references at fixed registration → **approve** — *you + agent*
@@ -86,6 +86,9 @@ Status marks: `[x]` built and tested · `[~]` built, never executed · `[!]` bui
 - [ ] Second subject from a plan (the cat) to prove generality — *agent*
 - [ ] Fresh-agent test: new session, `START-HERE.md` only, no help — *you*
 - [ ] Housekeeping: dedupe `INSTALL.md`; archive `freyjay/blender_connect`; private repo for `internal/` — *you*
+
+## Reference vs canon — 2026-09-07
+The boy reference's own eye span is **0.387** of ear-inclusive width (`refs/boy/manifest.json`). Canon default: 0.43. boy_v3 measured 0.389 — it matched the character and the fit score penalized it. Canon values in `config.py` are defaults for *a* face, not *this* face; the gauge must take ratios from the reference manifest.
 
 ## Gauge calibrated against known geometry — 2026-09-07
 `refs/calib_head/`: a plan-built subject with one deliberate asymmetry, rendered to three orthographic references with an exact manifest. Reference images digitized via the manifest alone agree with the instrument at IoU 0.988 / 0.996 / 0.991 (registration correct; noise floor ~0.01). Sensitivity: ear-size error −0.015, mirrored crest −0.054 (front) but **invisible from the top** — silhouette IoU is outline-only; jaw +10% −0.031 with a live staged re-fuse. Three live-context fixes (`bpy.context.object`, `visible_objects`) verified by the suite 29/29 before commit.
