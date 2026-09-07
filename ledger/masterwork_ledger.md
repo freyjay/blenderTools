@@ -250,3 +250,14 @@ construction; ray origins follow the subject's depth, so a head at y=-100
 measures like one at y=2. Suite 16 -> 20. Every P1 and P2 audit finding is now
 closed with a test. Open and stated: parented/animated transforms, reference
 manifests with uncertainty, Studio adapter.
+
+## v0.9.0 -- follow-up audit response
+Second external audit reproduced our 20/20 on Windows / Blender 5.2.1, then
+found four live-scene ownership failures (Edit Mode deletion, cross-model
+clear, name-collision fusion, delete-before-replace) and five correctness
+gaps. All original reproductions fixed with tests (suite 20 -> 29); safety
+contract described as partially verified where that is the truth. Ownership is
+now by created reference and per-model token; fusion is staged; baselines are
+approved, not merely logged. Installer is destination-aware; state dir is
+configurable; evidence is machine-readable. First run of the new exit-code
+contract caught two of my own stale tests before anything was committed.

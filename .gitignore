@@ -3,3 +3,4 @@
 *.blend1
 __pycache__/
 node_modules/
+internal/

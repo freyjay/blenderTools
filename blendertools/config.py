@@ -87,12 +87,27 @@ MCP_ADDON_FILE = "~/Library/Application Support/Blender/{ver}/extensions/user_de
 MCP_PATCH_MARKER = "_sendall_blocking"
 
 # ------------------------------------------------------------- evidence ----
-CALIBRATION_REPORT_DIR = "~/Developer/blenderTools/ledger/calibration"
-PLANS_DIR = "~/Developer/blenderTools/plans"
+
+def state_dir():
+    """Writable state lives OUTSIDE installed code (follow-up audit, packaging).
+    Order: $BLENDERTOOLS_HOME -> the repo checkout if this package lives in one
+    -> ~/.blendertools."""
+    env = os.environ.get("BLENDERTOOLS_HOME")
+    if env:
+        return os.path.expanduser(env)
+    here = os.path.dirname(os.path.realpath(__file__))
+    repo = os.path.dirname(here)
+    if os.path.isdir(os.path.join(repo, ".git")) or os.path.isdir(os.path.join(repo, "ledger")):
+        return repo
+    return os.path.expanduser("~/.blendertools")
+
+CALIBRATION_REPORT_DIR = os.path.join(state_dir(), "ledger", "calibration")
+PLANS_DIR = os.path.join(state_dir(), "plans")
 
 # ------------------------------------------------------------------ gauge ----
-VERSION_STR = "0.8.0"
-GAUGE_LOG = "~/Developer/blenderTools/ledger/gauge_log.jsonl"
+VERSION_STR = "0.9.0"
+GAUGE_ALGO = "gauge-1"   # bump when any metric definition changes; part of scorecard compatibility
+GAUGE_LOG = os.path.join(state_dir(), "ledger", "gauge_log.jsonl")
 # Composite weights. Transparent on purpose: change these, and the composite
 # score means something different -- so log the weights with the score.
 GAUGE_WEIGHTS = {"fit": 0.30, "silhouette": 0.30, "surface": 0.15, "topology": 0.15, "symmetry": 0.10}

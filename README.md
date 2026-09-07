@@ -82,13 +82,13 @@ Full text with the case behind each: `skills/blender-connect/SKILL.md` and `refe
 
 ## Quick start
 
-**Requirements:** Blender 5.1+ with the [official Blender MCP add-on](https://www.blender.org/lab/mcp-server/) (not the community `ahujasid/blender-mcp` — different protocol, not interchangeable). See `docs/CONNECTION-HANDOFF.md` for the full connection setup, the screenshot pitfall, and a socket patch for large payloads.
+**Library prerequisite:** any Blender 5.1+ (5.1.2 and 5.2.1 verified); it imports and runs standalone/headless with no MCP. **This project's selected transport** for driving Blender live is the [official Blender MCP add-on](https://www.blender.org/lab/mcp-server/) (not the community `ahujasid/blender-mcp` — different protocol, not interchangeable); see `docs/CONNECTION-HANDOFF.md`.
 
-**Install** (one symlink into Blender's auto-import path):
+**Install** (destination-aware; discovers this Blender's modules dir, never replaces a real directory):
 ```bash
-ln -s ~/Developer/blenderTools/blendertools \
-  "$HOME/Library/Application Support/Blender/5.1/scripts/modules/blendertools"
+/path/to/Blender --background --python blendertools/install.py -- --source /path/to/blenderTools
 ```
+See `INSTALL.md` for verification in a disposable process and uninstall.
 
 **First run**, inside Blender (or via the MCP `execute_blender_code` tool):
 ```python
@@ -108,14 +108,16 @@ bt.senses.proportions("FRONT", frame=["MyObject"])
 from blendertools import gauge, refs
 sc = gauge.scorecard("boy_v3", frame_face=["SkinFused", "EarL", "EarR"],
                      ref_grid_front=gauge.spans_to_grid(refs.BOY_FRONT_SPANS_30))
-gauge.gate(sc); gauge.log(sc)   # gate BEFORE log -- a failed candidate must not become a baseline
+g = gauge.gate(sc)   # vs the last APPROVED compatible baseline; 'unverified' if none
+gauge.log(sc)        # history only -- logging never promotes
+gauge.approve(sc["id"])   # after human review; only approved scorecards become baselines
 ```
 
 After editing any module: `bt.reload()`.
 
 ## Status
 
-**v0.8.0 — working, experimental, honest about its ceiling.** An independent audit of v0.6.0 reproduced twelve defects; all P1 and P2 findings are fixed with regression tests (see `AUDIT-RESPONSE.md`). Models are sphere-blockout plus voxel fusion; the topology gap (quad flow, subdivision-ready meshes) is the current frontier, and `recipes.quadriflow` is the first step. The calibration suite passes 20/20 (5 known-geometry cases, 14 regression tests from the external audit incl. occlusion policy, far-subject and transform/modifier checks, and a scene-integrity assertion with planted decoys). The gauge system exists but has one baseline logged. The tooling grew inside one long collaborative session between a human teaching calibration the way an atelier teaches drawing and an agent building the instruments it was being taught to use — the ledger reads accordingly.
+**v0.9.0 — working, experimental, honest about its ceiling.** An independent audit of v0.6.0 reproduced twelve defects; the original reproductions from both audits are fixed with regression tests (`AUDIT-RESPONSE.md`; follow-up findings are tracked in the ledger). The full safety contract — live MCP round-trip, fresh install, Metal render, parented/animated transforms, vessel containment — is **not** yet verified and is listed as such in every report. Models are sphere-blockout plus voxel fusion; the topology gap (quad flow, subdivision-ready meshes) is the current frontier, and `recipes.quadriflow` is the first step. The calibration suite passes 29/29: 5 known-geometry cases, 23 regression tests from two external audits, and a scene-integrity assertion (objects, selection, active object, mesh and collection counts, planted decoys). The gauge system exists but has one baseline logged. The tooling grew inside one long collaborative session between a human teaching calibration the way an atelier teaches drawing and an agent building the instruments it was being taught to use — the ledger reads accordingly.
 
 ## Credits
 

@@ -92,6 +92,8 @@ def add_part(p, name, layer, shape, location=(0, 0, 0), scale=(1, 1, 1), rotatio
         add_layer(p, layer)
     if not (1 <= min_detail <= max_detail <= 5):
         raise ValueError("detail gate must satisfy 1 <= min <= max <= 5")
+    if any(pt["name"] == name for pt in p["parts"]):
+        raise ValueError(f"duplicate part identifier: {name} (follow-up audit P1-3)")
     p["parts"].append({"name": name, "layer": layer, "shape": shape,
                        "location": list(location), "scale": list(scale), "rotation": list(rotation),
                        "color": list(color) if color else None, "min_detail": min_detail,
@@ -122,8 +124,10 @@ def resolve(p, parameters=None):
                       "segments": part["segments"] or prof["segments"]})
     if not parts:
         raise ValueError("plan resolves to no parts at this detail level")
-    resolved = {**p, "parts": parts, "resolved_parameters": values, "profile": prof,
-                "build_options": {"voxel": prof["voxel"], "segments": prof["segments"]}}
+    import copy
+    sealed = copy.deepcopy(prof)          # no aliasing of mutable config (follow-up audit P2-5)
+    resolved = {**copy.deepcopy(p), "parts": parts, "resolved_parameters": values, "profile": sealed,
+                "build_options": {"voxel": sealed["voxel"], "segments": sealed["segments"]}}
     resolved["sha256"] = _hash(resolved)
     return resolved
 
@@ -133,7 +137,8 @@ def _hash(resolved):
     AND the profile/build options (audit P2-10 -- voxel size changed the result
     but not the hash)."""
     body = json.dumps({"parts": resolved["parts"], "layers": resolved["layers"], "detail": resolved["detail"],
-                       "build_options": resolved["build_options"], "schema": SCHEMA}, sort_keys=True)
+                       "build_options": resolved["build_options"], "profile": resolved.get("profile"),
+                       "schema": SCHEMA}, sort_keys=True)
     return hashlib.sha256(body.encode()).hexdigest()
 
 
@@ -159,29 +164,48 @@ def load(path):
 
 
 # ------------------------------------------------------------------ build ----
-def build(resolved, clear_first=False, fuse=True, collection=None):
-    """Turn a RESOLVED plan into geometry. Returns a build report (provenance),
-    not just objects. If fuse=True, layers with continuity='fuse' are fused via
-    mesh_mind after all parts exist."""
+def build(resolved, clear_first=False, fuse=True, collection=None, on_collision="error", fused_name_fmt="{model}__{layer}Fused"):
+    """Turn a RESOLVED plan into geometry. Returns a build report (provenance).
+
+    Ownership (follow-up audit P1-2/P1-3): every created object is tagged with
+    the model id and a unique build id; created objects are tracked by
+    REFERENCE, so a name Blender suffixes ("Cranium.001") is still fused
+    correctly. clear_first removes only objects tagged with THIS model id.
+    on_collision: "error" (default) refuses requested names that already exist;
+    "suffix" accepts Blender's renaming and records the actual names."""
+    import uuid
     import bpy
     from mathutils import Vector
     if "sha256" not in resolved:
         raise ValueError("build() needs a resolved plan -- call resolve() first")
     if not verify(resolved):
         raise ValueError("build(): plan hash does not match its content -- plan was edited after resolve()")
+    if bpy.context.object is not None and bpy.context.object.mode != "OBJECT":
+        raise RuntimeError("build(): Blender must be in Object Mode")
+    model = resolved["model"]
+    build_id = uuid.uuid4().hex[:10]
+    opts = resolved["build_options"]                 # the ONLY config the builder consumes
+    voxel, seg_default = float(opts["voxel"]), int(opts["segments"])
     if clear_first:
-        # only run-owned geometry (audit P2-8): never nuke a user's scene by default
-        for o in [o for o in bpy.data.objects if o.type == "MESH" and o.get("bt_plan_sha256")]:
+        for o in [o for o in bpy.data.objects if o.type == "MESH" and o.get("bt_model") == model]:
             bpy.data.objects.remove(o, do_unlink=True)
+    names_requested = [pt["name"] for pt in resolved["parts"]]
+    if len(set(names_requested)) != len(names_requested):
+        raise ValueError("build(): duplicate part identifiers in resolved plan")
+    if on_collision == "error":
+        clash = [n for n in names_requested if n in bpy.data.objects]
+        if clash:
+            raise ValueError(f"build(): names already exist in the scene: {clash} -- use clear_first=True "
+                             "(scoped to this model) or on_collision='suffix'")
     target_coll = None
     if collection:
         target_coll = bpy.data.collections.get(collection) or bpy.data.collections.new(collection)
         if target_coll.name not in bpy.context.scene.collection.children:
             bpy.context.scene.collection.children.link(target_coll)
-    made = []
+    created = {}                                      # requested name -> Object reference
     for part in resolved["parts"]:
-        seg = int(part["segments"]); loc = part["location"]; sa = part["shape_args"]
-        shp = part["shape"]
+        seg = int(part["segments"] or seg_default); loc = part["location"]; sa = part["shape_args"]; shp = part["shape"]
+        before = {o.as_pointer() for o in bpy.data.objects}
         if shp == "sphere":
             bpy.ops.mesh.primitive_uv_sphere_add(radius=1, location=loc, segments=seg, ring_count=max(6, seg // 2))
         elif shp == "cube":
@@ -194,47 +218,52 @@ def build(resolved, clear_first=False, fuse=True, collection=None):
         elif shp == "torus":
             bpy.ops.mesh.primitive_torus_add(major_radius=sa.get("major_radius", 1), minor_radius=sa.get("minor_radius", 0.25),
                                              location=loc, major_segments=seg, minor_segments=max(8, seg // 2))
-        o = bpy.context.active_object
+        new_objs = [o for o in bpy.data.objects if o.as_pointer() not in before]
+        if len(new_objs) != 1:
+            raise RuntimeError(f"build(): expected exactly one new object for {part['name']}, got {len(new_objs)}")
+        o = new_objs[0]                               # ownership by created reference, never by active_object
         o.name = part["name"]
         o.scale = part["scale"]
         o.rotation_euler = [math.radians(a) for a in part["rotation"]]
         if part["color"]:
             o.color = part["color"]
-        o["bt_plan_sha256"] = resolved["sha256"]
-        o["bt_layer"] = part["layer"]
-        o["bt_detail"] = resolved["detail"]
-        o["bt_shape"] = shp
+        o["bt_plan_sha256"] = resolved["sha256"]; o["bt_model"] = model; o["bt_build"] = build_id
+        o["bt_layer"] = part["layer"]; o["bt_detail"] = resolved["detail"]; o["bt_shape"] = shp
         if target_coll is not None:
             for c in list(o.users_collection):
                 c.objects.unlink(o)
             target_coll.objects.link(o)
+        bpy.ops.object.select_all(action='DESELECT'); o.select_set(True); bpy.context.view_layer.objects.active = o
         bpy.ops.object.shade_smooth()
-        made.append(o)
+        created[part["name"]] = o
     fused = {}
     if fuse:
         from . import mesh_mind, recipes
         for lname, spec in resolved["layers"].items():
             if spec.get("continuity") == "fuse":
-                members = [pt["name"] for pt in resolved["parts"] if pt["layer"] == lname]
+                members = [created[pt["name"]] for pt in resolved["parts"] if pt["layer"] == lname]
                 if members:
-                    f = recipes.voxel_fuse(members, lname.capitalize() + "Fused", voxel=resolved["profile"]["voxel"])
-                    fused[lname] = mesh_mind.island_census(f.name)
-    # provenance report
+                    f = recipes.fuse_objects(members, fused_name_fmt.format(model=model, layer=lname), voxel=voxel,
+                                             owner=model, collection=collection)
+                    f["bt_model"] = model; f["bt_build"] = build_id; f["bt_plan_sha256"] = resolved["sha256"]
+                    fused[lname] = {"name": f.name, **mesh_mind.island_census(f.name)}
+    # provenance report: THIS build's objects only (follow-up audit P1-3)
     deps = bpy.context.evaluated_depsgraph_get()
-    verts = faces = 0
-    pts = []
-    for o in [o for o in bpy.data.objects if o.type == "MESH" and not o.hide_get()]:
+    mine = [o for o in bpy.data.objects if o.type == "MESH" and o.get("bt_build") == build_id and not o.hide_get()]
+    verts = faces = 0; pts = []
+    for o in mine:
         me = o.evaluated_get(deps).to_mesh()
         verts += len(me.vertices); faces += len(me.polygons)
         pts += [o.matrix_world @ Vector(c) for c in o.bound_box]
         o.evaluated_get(deps).to_mesh_clear()
-    lo = [min(pt[i] for pt in pts) for i in range(3)] if pts else None
-    hi = [max(pt[i] for pt in pts) for i in range(3)] if pts else None
-    return {"model": resolved["model"], "plan_sha256": resolved["sha256"], "detail": resolved["detail"],
+    lo = [round(min(pt[i] for pt in pts), 4) for i in range(3)] if pts else None
+    hi = [round(max(pt[i] for pt in pts), 4) for i in range(3)] if pts else None
+    return {"model": model, "build_id": build_id, "plan_sha256": resolved["sha256"], "detail": resolved["detail"],
+            "build_options_used": {**opts, "fuse": bool(fuse), "collection": collection, "on_collision": on_collision},
             "package": config.VERSION_STR, "blender": bpy.app.version_string,
             "platform": platform.system(), "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
-            "parts_built": len(made), "fused_layers": fused,
-            "visible_verts": verts, "visible_faces": faces, "bounds": [lo, hi]}
+            "parts_built": len(created), "actual_names": {k: v.name for k, v in created.items()},
+            "fused_layers": fused, "visible_verts": verts, "visible_faces": faces, "bounds": [lo, hi]}
 
 
 # ---------------------------------------------------------------- capture ----

@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.9.0 — 2026-09-06 (follow-up audit response)
+Live-scene safety: preflight refuses non-Object Mode before any operator;
+fixtures owned by created reference (pointer diff), never active_object;
+selection/active restored; run-created zero-user meshes purged, user data
+untouched; collections counted; run_isolated() for a separate factory-startup
+process with timeout. Ownership: per-model/per-build tokens; clear_first scoped;
+created objects tracked by reference so name collisions fuse the NEW part;
+staged fusion (validate -> build under staging name -> swap). Provenance: sealed
+resolved profile; hash covers what the builder consumes; build-time options in
+the report. Gauge: scope forwarded and recorded; reference ids; compat key;
+approve/reject events; only approved scorecards are baselines; no-baseline =
+unverified. Validation unified across occupancy/grid_diff/width_at; n bounded.
+cavity_probe: containment not_verified, no physical boolean. Runner exits
+nonzero on failure. Destination-aware install.py; state_dir(); richer evidence;
+tag + archive + checksum. Suite 20 -> 29. Follow-up findings are tracked in ledger/masterwork_ledger.md.
+
 ## 0.8.0 — 2026-09-06 (audit response, Stage B)
 `cast.py`: one casting policy for eye and senses -- per-selection world-space
 BVH trees from evaluated meshes, depth-rebased ray origins, explicit 'selected'

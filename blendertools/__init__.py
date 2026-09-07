@@ -58,10 +58,12 @@ def doctor():
         "modules": {n: hasattr(pkg, n) for n in _SUBMODULES},
         "config_overrides": config.overrides_path_if_present(),
         "socket_patch": patch_status(),   # source-marker detection, NOT a transport test
-        "plans_dir": os.path.expanduser(config.PLANS_DIR),
+        "plans_dir": config.PLANS_DIR,
+        "state_dir": config.state_dir(),
         "not_verified_by_doctor": [
             "live MCP round-trip (doctor cannot tell if it was called over MCP or headless)",
-            "calibration suite (run bt.calibration.run_all() -- it writes a report)",
+            "calibration suite (run bt.calibration.run_all(), or run_isolated() for a separate process)",
             "any model's fidelity to its reference (run bt.gauge.scorecard)",
+            "socket patch: source-marker detection only, not a transport or large-payload test",
         ],
     }

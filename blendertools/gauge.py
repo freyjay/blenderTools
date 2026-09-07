@@ -92,11 +92,21 @@ def iou(grid_a, grid_b):
             "worst_rows": sorted(range(len(rows)), key=lambda k: -rows[k])[:5]}
 
 
-def silhouette_fit(ref_grid, view="FRONT", frame=None):
+def reference_id(ref_grid):
+    import hashlib
+    return hashlib.sha256(json.dumps(ref_grid).encode()).hexdigest()[:16]
+
+
+def silhouette_fit(ref_grid, view="FRONT", frame=None, policy=None):
+    """Frame is REQUIRED for a scoped measurement (follow-up audit P2-6: the
+    scorecard used to drop it and measure a whole-scene auto-fit)."""
     from . import senses
+    if frame is None:
+        raise ValueError("silhouette_fit: pass frame=[...] -- an unscoped silhouette is not comparable to a reference")
     g = senses.occupancy_grid(view=view, n=len(ref_grid), frame=frame)
     out = iou(g["grid"], ref_grid)
-    out.update({"view": view, "window": (g["center"], g["extent"])})
+    out.update({"view": view, "window": (g["center"], g["extent"]), "n": len(ref_grid),
+                "frame": list(frame), "policy": policy or "selected", "reference_id": reference_id(ref_grid)})
     return out
 
 
@@ -227,9 +237,14 @@ def scorecard(model_id, frame_face, canon=None, heights=None, ref_grid_front=Non
           "weights": dict(w), "config_hash": cfg_hash, "frame_face": list(frame_face)}
     sc["fit"] = reference_fit(frame_face, canon, heights, skin_name=skin_name)
     if ref_grid_front:
-        sc["silhouette_front"] = silhouette_fit(ref_grid_front, "FRONT")
+        sc["silhouette_front"] = silhouette_fit(ref_grid_front, "FRONT", frame=frame_face)
     if ref_grid_side:
-        sc["silhouette_side"] = silhouette_fit(ref_grid_side, "RIGHT")
+        sc["silhouette_side"] = silhouette_fit(ref_grid_side, "RIGHT", frame=frame_face)
+    sc["scope"] = {"frame_face": list(frame_face), "skin": skin_name, "heights": dict(heights),
+                   "views": [v for v in ("FRONT", "RIGHT") if sc.get("silhouette_" + ("front" if v == "FRONT" else "side"))],
+                   "policy": "selected", "algorithm": config.GAUGE_ALGO,
+                   "references": {k: sc[k]["reference_id"] for k in ("silhouette_front", "silhouette_side") if k in sc}}
+    sc["status"] = "candidate"
     sc["surface"] = surface(frame_face)
     if skin_name in bpy.data.objects:
         sc["topology"] = topology(skin_name)
@@ -247,7 +262,18 @@ def scorecard(model_id, frame_face, canon=None, heights=None, ref_grid_front=Non
     sc["composite"] = round(num / den, 4) if den else None
     sc["components"] = parts
     sc["coverage"] = sorted(k for k, v in parts.items() if v is not None)
+    sc["compat"] = compat_key(sc)
     return sc
+
+
+def compat_key(sc):
+    """Two scorecards are comparable only if they measured the same thing the
+    same way: model, weights/canon, coverage, scope (frame, views, policy,
+    algorithm version) and the exact reference grids."""
+    import hashlib
+    body = json.dumps({"model": sc.get("model"), "config_hash": sc.get("config_hash"),
+                       "coverage": sc.get("coverage"), "scope": sc.get("scope")}, sort_keys=True)
+    return hashlib.sha256(body.encode()).hexdigest()[:16]
 
 
 def log(sc, path=None):
@@ -268,26 +294,37 @@ def history(path=None):
 
 
 # ---------------------------------------------------------- regression gate ----
+def _events(path=None):
+    return [h for h in history(path) if h.get("event")]
+
+
+def approve(sc_id, path=None, note=""):
+    """A separate review event. Logging NEVER promotes a candidate; only this does."""
+    return log({"event": "approve", "id": sc_id, "note": note, "ts": time.strftime("%Y-%m-%dT%H:%M:%S")}, path)
+
+
+def reject(sc_id, path=None, note=""):
+    return log({"event": "reject", "id": sc_id, "note": note, "ts": time.strftime("%Y-%m-%dT%H:%M:%S")}, path)
+
+
 def baseline_for(sc, path=None):
-    """The most recent logged scorecard of the SAME model, with the same config
-    hash and coverage, that is not this scorecard. No cross-model fallback
-    (audit P1-5)."""
-    cands = [h for h in history(path)
-             if h.get("model") == sc.get("model") and h.get("id") != sc.get("id")]
-    same_cfg = [h for h in cands if h.get("config_hash") == sc.get("config_hash")
-                and h.get("coverage") == sc.get("coverage")]
-    return (same_cfg or [None])[-1], len(cands) - len(same_cfg)
+    """The most recent APPROVED scorecard with the same compat key, not this one
+    (follow-up audit P2-6: a logged-but-rejected candidate must never become
+    the next baseline)."""
+    hist = history(path)
+    approved = {e["id"] for e in hist if e.get("event") == "approve"} - {e["id"] for e in hist if e.get("event") == "reject"}
+    cands = [h for h in hist if not h.get("event") and h.get("id") != sc.get("id") and h.get("model") == sc.get("model")]
+    eligible = [h for h in cands if h.get("id") in approved and h.get("compat") == sc.get("compat")]
+    return (eligible or [None])[-1], {"same_model_history": len(cands), "approved_compatible": len(eligible)}
 
 
 def gate(sc, path=None, tolerance=0.005, raise_on_fail=False):
-    """Invariant, not opinion: a candidate may not lower any component or the
-    composite by more than `tolerance` versus its baseline. CALL BEFORE log():
-    the candidate is excluded by id, so log order can no longer fool the gate,
-    but a candidate that fails the gate should not be logged as a baseline."""
-    prev, incompatible = baseline_for(sc, path)
+    """Invariant, not opinion. Compares a candidate to its APPROVED, compatible
+    baseline. With no such baseline the result is 'unverified' -- not a pass."""
+    prev, stats = baseline_for(sc, path)
     if prev is None:
-        return {"ok": True, "no_baseline": True, "incompatible_history": incompatible,
-                "note": "no compatible baseline for this model/config/coverage -- nothing to regress against"}
+        return {"ok": None, "status": "unverified", "verified": False, **stats,
+                "note": "no approved compatible baseline -- run gate after approving one; this is not a pass"}
     regressions = []
     for k, v in sc["components"].items():
         pv = prev.get("components", {}).get(k)
@@ -296,19 +333,17 @@ def gate(sc, path=None, tolerance=0.005, raise_on_fail=False):
     if sc.get("composite") is not None and prev.get("composite") is not None \
             and (prev["composite"] - sc["composite"]) > tolerance:
         regressions.append({"component": "composite", "was": prev["composite"], "now": sc["composite"]})
-    out = {"ok": not regressions, "regressions": regressions, "vs_id": prev.get("id"),
-           "vs_ts": prev.get("ts"), "incompatible_history": incompatible}
+    out = {"ok": not regressions, "status": "pass" if not regressions else "regression", "verified": True,
+           "regressions": regressions, "vs_id": prev.get("id"), "vs_ts": prev.get("ts"), **stats}
     if raise_on_fail and regressions:
         raise AssertionError(f"regression gate failed: {regressions}")
     return out
 
 
 def compare_to_last(sc, path=None):
-    """Deltas vs the compatible baseline (same rules as gate)."""
     prev, _ = baseline_for(sc, path)
     if prev is None:
-        return {"no_baseline": True}
+        return {"status": "unverified"}
     deltas = {k: round(v - prev["components"][k], 4) for k, v in sc["components"].items()
               if v is not None and prev.get("components", {}).get(k) is not None}
-    return {"vs_id": prev.get("id"), "composite_delta": round((sc["composite"] or 0) - (prev["composite"] or 0), 4),
-            "deltas": deltas}
+    return {"vs_id": prev.get("id"), "composite_delta": round((sc["composite"] or 0) - (prev["composite"] or 0), 4), "deltas": deltas}

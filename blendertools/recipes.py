@@ -21,47 +21,107 @@ def sphere(name, loc, scale, color=(0.92, 0.89, 0.85, 1), segs=24):
 
 
 # ------------------------------------------------------------------ fusion ----
-def voxel_fuse(part_names, out_name, voxel=None, color=None):
-    """Duplicate -> join -> voxel remesh -> hide the part stash. The stash stays
-    editable; re-run to re-fuse after part edits (mesh_mind.fuse_group wraps
-    this with the graph contract)."""
+def _valid_voxel(v):
+    return isinstance(v, (int, float)) and math.isfinite(v) and 0.005 <= v <= 2.0
+
+
+def _link_to(obj, collection):
+    if collection is None:
+        return
+    coll = bpy.data.collections.get(collection) or bpy.data.collections.new(collection)
+    if coll.name not in bpy.context.scene.collection.children:
+        bpy.context.scene.collection.children.link(coll)
+    for c in list(obj.users_collection):
+        c.objects.unlink(obj)
+    coll.objects.link(obj)
+
+
+def fuse_objects(sources, out_name, voxel=None, owner=None, collection=None, color=None):
+    """STAGED fusion (follow-up audit P1-4). Order of operations:
+      1. validate everything (types, voxel, identities, prior-result ownership)
+      2. build the replacement under a staging name -- the old result is untouched
+      3. only after remesh succeeds: remove the OLD result, rename staging, hide sources
+    Any failure after step 1 deletes the staging object and leaves the scene as it was.
+    `owner` is a per-model token: a prior result with a different owner is never replaced."""
     voxel = voxel or config.VOXEL_FINE
-    # Validate BEFORE any mutation (audit P2-8).
+    if not _valid_voxel(voxel):
+        raise ValueError(f"fuse_objects: voxel must be finite in [0.005, 2.0], got {voxel!r}")
+    if not sources:
+        raise ValueError("fuse_objects: no sources")
+    bad = [o.name for o in sources if getattr(o, "type", None) != "MESH"]
+    if bad:
+        raise ValueError(f"fuse_objects: non-mesh sources {bad}")
+    if any(o.name == out_name for o in sources):
+        raise ValueError("fuse_objects: result name collides with a source")
+    prior = bpy.data.objects.get(out_name)
+    if prior is not None:
+        if prior.get("bt_owner") not in ("fuse", "mesh_mind"):
+            raise ValueError(f"fuse_objects: '{out_name}' exists and is not a fuse result -- refusing to overwrite")
+        if owner is not None and prior.get("bt_model") not in (None, owner):
+            raise ValueError(f"fuse_objects: '{out_name}' belongs to model {prior.get('bt_model')!r}, not {owner!r}")
+    staging_name = out_name + ".__staging"
+    if staging_name in bpy.data.objects:
+        bpy.data.objects.remove(bpy.data.objects[staging_name], do_unlink=True)
+    # remember state to restore on failure
+    sel = [o.name for o in bpy.context.selected_objects]
+    active = bpy.context.view_layer.objects.active
+    dups, staged = [], None
+    try:
+        bpy.ops.object.select_all(action='DESELECT')
+        for o in sources:
+            d = o.copy(); d.data = o.data.copy()
+            bpy.context.collection.objects.link(d)
+            d.hide_set(False); d.hide_render = False; d.hide_viewport = False
+            d.select_set(True); dups.append(d)
+        bpy.context.view_layer.objects.active = dups[0]
+        bpy.ops.object.join()
+        staged = bpy.context.active_object
+        staged.name = staging_name
+        dups = []   # consumed by join
+        rm = staged.modifiers.new("Remesh", 'REMESH')
+        rm.mode, rm.voxel_size = 'VOXEL', voxel
+        bpy.ops.object.modifier_apply(modifier="Remesh")
+        if len(staged.data.polygons) == 0:
+            raise RuntimeError("remesh produced an empty mesh")
+        bpy.ops.object.shade_smooth()
+    except Exception:
+        for d in dups:
+            bpy.data.objects.remove(d, do_unlink=True)
+        if staged is not None:
+            bpy.data.objects.remove(staged, do_unlink=True)
+        bpy.ops.object.select_all(action='DESELECT')
+        for n in sel:
+            o = bpy.data.objects.get(n)
+            if o: o.select_set(True)
+        bpy.context.view_layer.objects.active = active
+        raise
+    # ---- commit: only now is the prior result touched
+    if prior is not None:
+        bpy.data.objects.remove(prior, do_unlink=True)
+    staged.name = out_name
+    staged.hide_set(False); staged.hide_render = False; staged.hide_viewport = False
+    staged["bt_owner"] = "fuse"
+    staged["bt_fused_from"] = ",".join(o.name for o in sources)
+    if owner is not None:
+        staged["bt_model"] = owner
+    if color:
+        staged.color = color
+    else:
+        staged.color = sources[0].color[:]
+    _link_to(staged, collection)
+    for o in sources:
+        o.hide_set(True); o.hide_render = True
+    return staged
+
+
+def voxel_fuse(part_names, out_name, voxel=None, color=None, owner=None, collection=None):
+    """Name-based convenience wrapper over fuse_objects. Resolves names to
+    objects FIRST (missing or non-mesh names raise before anything mutates)."""
     missing = [n for n in part_names if n not in bpy.data.objects]
     if missing or not part_names:
         raise ValueError(f"voxel_fuse: unknown parts {missing or '(none given)'}")
-    parts = [bpy.data.objects[n] for n in part_names]
-    old = bpy.data.objects.get(out_name)
-    if old is not None:
-        if old.get("bt_owner") != "fuse":
-            raise ValueError(f"voxel_fuse: '{out_name}' exists and is not a fuse result -- refusing to overwrite")
-        bpy.data.objects.remove(old, do_unlink=True)
-    bpy.ops.object.select_all(action='DESELECT')
-    dups = []
-    for o in parts:
-        d = o.copy(); d.data = o.data.copy()
-        bpy.context.collection.objects.link(d)
-        # copies inherit the stash's hidden flags -- reset BOTH (audit P1-3)
-        d.hide_set(False); d.hide_render = False; d.hide_viewport = False
-        d.select_set(True); dups.append(d)
-    bpy.context.view_layer.objects.active = dups[0]
-    bpy.ops.object.join()
-    f = bpy.context.active_object
-    f.name = out_name
-    f.hide_set(False); f.hide_render = False; f.hide_viewport = False
-    f["bt_owner"] = "fuse"
-    f["bt_fused_from"] = ",".join(part_names)
-    rm = f.modifiers.new("Remesh", 'REMESH')
-    rm.mode, rm.voxel_size = 'VOXEL', voxel
-    bpy.ops.object.modifier_apply(modifier="Remesh")
-    bpy.ops.object.shade_smooth()
-    if color:
-        f.color = color
-    elif parts:
-        f.color = parts[0].color[:]
-    for o in parts:
-        o.hide_set(True); o.hide_render = True
-    return f
+    return fuse_objects([bpy.data.objects[n] for n in part_names], out_name, voxel=voxel,
+                        owner=owner, collection=collection, color=color)
 
 
 def quadriflow(obj, target_faces=None, symmetry=True, preserve_sharp=False, seed=0):

@@ -10,7 +10,7 @@ Three layers. You own two of them.
 - **Instruments**: `blendertools/`, a Python package that runs INSIDE Blender's
   interpreter. Text-based vision, measurement senses, part-graph, gauges, and a
   ground-truth calibration suite. Already symlinked into Blender's
-  `scripts/modules`, so `import blendertools as bt` works in any session.
+  `scripts/modules` by `blendertools/install.py` (run it once per Blender; see INSTALL.md); then `import blendertools as bt` works in any session.
 - **Method**: `skills/blender-connect/SKILL.md`. Doctrine and workflow. Runs in
   YOUR context — it decides how you act on what the instruments tell you.
 
@@ -28,7 +28,7 @@ import bpy; result = {"v": bpy.app.version_string, "n": len(bpy.data.objects)}
 ```python
 import blendertools as bt
 bt.doctor()                    # all modules True, Blender version, overrides
-bt.calibration.run_all()       # MUST report "passed": true before you trust a measurement
+bt.calibration.run_isolated()  # separate factory-startup Blender; MUST pass before you trust a measurement (run_all() for a throwaway scene, Object Mode only)
 ```
 If calibration fails, the instrument is wrong, not the scene — stop and fix it.
 After editing any module: `bt.reload()` (dependency-ordered; never pop sys.modules by hand).
@@ -47,7 +47,7 @@ Before and after any modeling pass:
 ```python
 from blendertools import gauge, refs
 sc = gauge.scorecard("<model_id>", frame_face=[...], ref_grid_front=gauge.spans_to_grid(refs.BOY_FRONT_SPANS_30))
-gauge.gate(sc); gauge.log(sc)   # gate BEFORE log
+g = gauge.gate(sc); gauge.log(sc); gauge.approve(sc["id"])   # gate -> log (history) -> approve only after review
 ```
 "Better" means gate() reports no regressions against a compatible baseline; the composite is one lens, not the verdict.
 

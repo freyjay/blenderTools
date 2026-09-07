@@ -94,49 +94,24 @@ def island_census(obj_name):
     return {"islands": islands, "non_manifold_edges": nonman, "verts": nverts}
 
 
-def fuse_group(graph, group, voxel=0.05, fused_name=None):
-    """Fuse ONE continuity group only; everything else untouched.
-    Members stay stashed (hidden) for future part-level adjustment."""
+def fuse_group(graph, group, voxel=0.05, fused_name=None, owner=None, collection=None):
+    """Fuse ONE continuity group via recipes.fuse_objects (STAGED: the prior result
+    is only replaced after the new one succeeds -- follow-up audit P1-4).
+    Members stay stashed (hidden) for part-level adjustment. Returns the result name."""
     fused_name = fused_name or (group.capitalize() + "Fused")
     spec = graph.get(group)
     if spec is None:
         raise ValueError(f"fuse_group: unknown layer '{group}'")
     if spec.get("continuity") != "fuse":
-        raise ValueError(f"fuse_group: layer '{group}' is declared continuity={spec.get('continuity')!r}; "
-                         "refusing to fuse a 'separate' layer (audit P2-8)")
+        raise ValueError(f"fuse_group: layer '{group}' is declared continuity={spec.get('continuity')!r}; refusing")
     wanted = list(spec.get("members", []))
     missing = [m for m in wanted if m not in bpy.data.objects]
     if not wanted or missing:
         raise ValueError(f"fuse_group: members not found: {missing or '(none declared)'}")
-    existing = bpy.data.objects.get(fused_name)
-    if existing is not None:
-        if existing.get("bt_owner") not in ("mesh_mind", "fuse"):
-            raise ValueError(f"fuse_group: '{fused_name}' exists and is not a fuse result -- refusing to overwrite")
-        bpy.data.objects.remove(existing, do_unlink=True)
-    members = [bpy.data.objects[m] for m in wanted]
-    bpy.ops.object.select_all(action='DESELECT')
-    dups = []
-    for o in members:
-        d = o.copy(); d.data = o.data.copy()
-        bpy.context.collection.objects.link(d)
-        d.hide_set(False); d.hide_render = False; d.hide_viewport = False
-        d.select_set(True); dups.append(d)
-    bpy.context.view_layer.objects.active = dups[0]
-    bpy.ops.object.join()
-    f = bpy.context.active_object; f.name = fused_name
-    f.hide_set(False); f.hide_render = False; f.hide_viewport = False
-    f["bt_owner"] = "mesh_mind"; f["bt_fused_from"] = ",".join(wanted)
-    rm = f.modifiers.new("Remesh", 'REMESH')
-    rm.mode = 'VOXEL'; rm.voxel_size = voxel
-    bpy.ops.object.modifier_apply(modifier="Remesh")
-    bpy.ops.object.shade_smooth()
-    try:
-        f.color = members[0].color[:]
-    except Exception:
-        pass
-    for o in members:
-        o.hide_set(True); o.hide_render = True
-    return fused_name
+    from . import recipes
+    f = recipes.fuse_objects([bpy.data.objects[m] for m in wanted], fused_name, voxel=voxel, owner=owner, collection=collection)
+    f["bt_owner"] = "fuse"
+    return f.name
 
 
 # audit P2-9: honest alias -- prefer this name

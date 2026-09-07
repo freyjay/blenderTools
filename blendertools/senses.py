@@ -195,7 +195,8 @@ def render_hardness(view="RIGHT", frame=None, width=56, height=None, aspect=0.5)
 
 def cavity_probe(center=(0.0, 0.0), rim_radius=0.7, rim_z=2.1, n=14, frame=None):
     """Function-not-form probe: vertical rays down into a vessel.
-    Returns holds_liquid, max/mean interior depth below rim, volume held.
+    Returns max/mean interior depth below rim, a volume ESTIMATE and sampled wall
+    coverage. containment is 'not_verified' -- there is no leak-path check.
     Born from a human audit: a mug modeled solid scored perfectly on every
     surface sense. Surface senses do not see cavities; this one does."""
     deps = bpy.context.evaluated_depsgraph_get()
@@ -214,17 +215,19 @@ def cavity_probe(center=(0.0, 0.0), rim_radius=0.7, rim_z=2.1, n=14, frame=None)
             if h:
                 depths.append(max(0.0, rim_z - h[0].z))
     if not depths:
-        return {"holds_liquid": False, "enclosed": False, "max_depth": 0.0, "volume_units3_estimate": 0.0,
+        return {"containment": "not_verified", "max_depth": 0.0, "volume_units3_estimate": 0.0, "wall_coverage": None,
                 "assumptions": ["no interior surface hit below the rim"]}
     vol = sum(d * cell for d in depths)
     mx = max(depths)
     enc = enclosure_check(center, rim_radius, rim_z, rim_z - mx, frame=frame)
     return {"max_depth": round(mx, 2), "mean_depth": round(sum(depths) / len(depths), 2),
-            "volume_units3_estimate": round(vol, 2), "enclosed": enc["enclosed"], "enclosure": enc,
-            "holds_liquid": bool(enc["enclosed"] and mx > 0.3),
+            "volume_units3_estimate": round(vol, 2),
+            "wall_coverage": round(1.0 - enc["escape_fraction"], 3), "enclosure_samples": enc,
+            "containment": "not_verified",
             "assumptions": ["vertical depth sampling inside the rim circle",
-                            "enclosure = radial rays from interior points hit a wall within 1.5x rim radius",
-                            "no watertightness, leak-path or units check -- an estimate, not an engineering verdict"]}
+                            "wall_coverage = fraction of radial rays from interior points that hit a wall within 1.5x rim radius",
+                            "containment is NOT verified: no watertightness or leak-path check exists (an open bottom over a "
+                            "disconnected floor passes every radial sample) -- follow-up audit P2-8"]}
 
 
 def width_bands(view="FRONT", frame=None, z_top=1.10, z_bot=-1.15, bands=10, rows=64):
@@ -254,6 +257,10 @@ def occupancy_grid(view="FRONT", n=30, frame=None, center=None, extent=None):
     import bpy
     from . import eye
     from mathutils import Vector
+    if not (4 <= int(n) <= 140):
+        raise ValueError(f"occupancy_grid: n must be in [4, 140] (the text renderer caps width at 140), got {n}")
+    n = int(n)
+    _cast.resolve_frame(frame)          # validate ONCE here for both the auto-fit and locked paths
     if center is None or extent is None:
         _f, right, up_s = eye._basis(view)
         objs = _targets(frame)
@@ -263,8 +270,7 @@ def occupancy_grid(view="FRONT", n=30, frame=None, center=None, extent=None):
                 w = o.matrix_world @ Vector(c)
                 us.append(w.dot(right)); vs.append(w.dot(up_s))
         if not us:
-            return {"grid": [], "center": (0, 0), "extent": (0, 0),
-                    "n": n, "view": view, "locked": False}
+            raise ValueError("occupancy_grid: no visible mesh in frame")
         cu, cv = (min(us) + max(us)) / 2, (min(vs) + max(vs)) / 2
         eu, ev = (max(us) - min(us)) / 2 * 1.03, (max(vs) - min(vs)) / 2 * 1.03
         locked = False
@@ -277,6 +283,8 @@ def occupancy_grid(view="FRONT", n=30, frame=None, center=None, extent=None):
                          center=(cu, cv), extent=(eu, ev), frame=frame)
     rows = g.split(chr(10))[2:]
     grid = [[1 if ch != " " else 0 for ch in row] for row in rows if row]
+    if len(grid) != n or any(len(r) != n for r in grid):
+        raise RuntimeError(f"occupancy_grid: renderer returned {len(grid)}x{len(grid[0]) if grid else 0}, expected {n}x{n}")
     return {"grid": grid, "center": (round(cu, 4), round(cv, 4)),
             "extent": (round(eu, 4), round(ev, 4)), "n": n, "view": view,
             "locked": locked}
@@ -291,6 +299,13 @@ def grid_diff(a, b, tol=1e-6):
     """Cell-exact diff of two occupancy grids IN THE SAME WINDOW. Refuses
     mismatched windows (misregistration is a D1-class error, not a diff).
     Render: '+' added, '-' removed, '#' stable, ' ' empty."""
+    def _shape(g):
+        gg = g["grid"] if isinstance(g, dict) else g
+        if not gg or any(len(r) != len(gg[0]) for r in gg):
+            raise ValueError("grid_diff: ragged or empty grid")
+        return (len(gg), len(gg[0]))
+    if _shape(a) != _shape(b):
+        raise ValueError(f"grid_diff: shapes differ {_shape(a)} vs {_shape(b)}")
     if a["n"] != b["n"] or a.get("view") != b.get("view") or \
        any(abs(x - y) > tol for x, y in zip(a["center"], b["center"])) or \
        any(abs(x - y) > tol for x, y in zip(a["extent"], b["extent"])):
@@ -395,19 +410,12 @@ def clean_heights(exclude, z_lo=-1.15, z_hi=1.10, steps=48, margin=0.02):
 
 
 def width_at(z, view="FRONT", frame=None, rows=96):
-    """Silhouette width at the row nearest z (sub-pixel edges). Pair with
-    clean_heights() before using as a ratio denominator."""
-    s = silhouette(view, frame, rows)
-    best, bw, bv = None, None, None
-    for L, R, v in zip(s["left"], s["right"], s["v"]):
-        if L is None:
-            continue
-        if best is None or abs(v - z) < best:
-            best, bw, bv = abs(v - z), R - L, v
-    return {"z_requested": z,
-            "z_measured": round(bv, 4) if bv is not None else None,
-            "width": round(bw, 4) if bw is not None else None}
-
+    """Delegates to measure.width_at (one validated ruler, follow-up audit P2-7).
+    Returns the width only; use measure.width_at for contributors/sampled_z."""
+    if frame is None:
+        raise ValueError("width_at: frame is required")
+    from . import measure
+    return measure.width_at(z, frame, view=view, rows=rows)[0]
 
 def perception_floor(view="FRONT", frame=None, n=30, trials=4):
     """Empirical noise floor: re-sample the SAME window with sub-cell grid
