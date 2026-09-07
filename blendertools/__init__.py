@@ -7,14 +7,14 @@ Installed via symlink into Blender's scripts/modules; in any session:
     bt.reload()                 # after editing any submodule; dependency-ordered
 """
 
-__version__ = "0.7.0"
+from .config import VERSION_STR as __version__  # single source of truth
 
 import importlib as _importlib
 
-# Dependency order matters: eye has no deps; senses imports eye; the rest import both.
-_SUBMODULES = ["config", "eye", "senses", "measure", "mesh_mind", "recipes", "plan", "calibration", "gauge", "refs"]
+# Dependency order matters: cast has no deps; eye imports cast; senses imports both; the rest follow.
+_SUBMODULES = ["config", "cast", "eye", "senses", "measure", "mesh_mind", "recipes", "plan", "calibration", "gauge", "refs"]
 
-from . import config, eye, senses, measure, mesh_mind, recipes, plan, calibration, gauge, refs  # noqa: E402
+from . import config, cast, eye, senses, measure, mesh_mind, recipes, plan, calibration, gauge, refs  # noqa: E402
 
 
 def reload():

@@ -14,36 +14,24 @@ import math
 import bpy
 from mathutils import Vector
 from .eye import _basis, _targets, _bounds
+from . import cast as _cast
 
 _H_RAMP = " .:-=+*#%@"
 
 
-def _caster(frame):
-    """v0.2: pass-through occlusion -- a hit outside `frame` peels through
-    (up to 8 bounces) instead of reporting a miss. Fixes false silhouette
-    breaks where hair/eyes shadow skin."""
-    deps = bpy.context.evaluated_depsgraph_get()
-    scene = bpy.context.scene
-    objs = _targets(frame)
-    names = None
-    if frame is not None:
-        requested = list(frame)
-        missing = sorted(set(requested) - {o.name for o in objs})
-        if not requested or missing:
-            raise ValueError(f"frame names not found or not visible: {missing or '(empty frame)'} -- "
-                             "an unresolved frame must not silently measure the whole scene (audit P1-4)")
-        names = set(requested)
+def _caster(frame, policy=None):
+    """One casting policy for every sense (Stage B). Returns (cast, objs) where
+    cast(origin, direction, rebase=True) -> (loc, nrm, name) or None. Frames are
+    validated (audit P1-4); origins are depth-rebased unless rebase=False
+    (enclosure probes must start INSIDE geometry)."""
+    objs = _cast.resolve_frame(frame)
+    caster = _cast.Caster(objs, policy=policy)
+    if objs is None:
+        objs = _targets(None)
 
-    def cast(origin, direction, _bounces=0):
-        hit, loc, nrm, _i, obj, _m = scene.ray_cast(deps, origin, direction)
-        if not hit:
-            return None
-        if names and obj.name not in names:
-            if _bounces >= 8:
-                return None
-            nudged = loc + direction.normalized() * 1e-4
-            return cast(nudged, direction, _bounces + 1)
-        return loc, nrm, obj.name
+    def cast(origin, direction, rebase=True):
+        h = caster.cast(origin, direction, rebase=rebase)
+        return None if h is None else (h[0], h[1], h[2])
     return cast, objs
 
 def _edge_bisect(cast, forward, right, up_s, v, u_in, u_out, start, iters=7):
@@ -460,7 +448,7 @@ def enclosure_check(center=(0.0, 0.0), rim_radius=0.7, rim_z=2.1, floor_z=0.2, f
         for i in range(n_dirs):
             a = 2 * math.pi * i / n_dirs
             d = Vector((math.cos(a), math.sin(a), 0.0))
-            h = cast(Vector((center[0], center[1], z)), d)
+            h = cast(Vector((center[0], center[1], z)), d, rebase=False)   # must start inside
             if h and (h[0] - Vector((center[0], center[1], z))).length <= 1.5 * rim_radius:
                 hits += 1
             else:

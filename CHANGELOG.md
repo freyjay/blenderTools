@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.0 — 2026-09-06 (audit response, Stage B)
+`cast.py`: one casting policy for eye and senses -- per-selection world-space
+BVH trees from evaluated meshes, depth-rebased ray origins, explicit 'selected'
+(full projection, occluders ignored) vs 'visible' (first hit) semantics. Fixes
+audit P2-6 (occupancy/silhouette disagreement) and P2-7a (subjects far from the
+origin). scanline routed through it with a step guard. Suite 16 -> 20: occupancy
+occlusion, policy semantics, far-subject (+-100 on three views), scale/rotation/
+modifier evaluation. Decoy COLLECTION planted per the audit's exact repro;
+hide_set guarded for multi-scene files; version has one source (config).
+
 ## 0.7.0 — 2026-09-06 (audit response, Stage A)
 All P1 findings from the external audit of v0.6.0 fixed, each with a regression
 test; suite grows 5 -> 16 including a scene-integrity assertion with planted

@@ -91,7 +91,7 @@ CALIBRATION_REPORT_DIR = "~/Developer/blenderTools/ledger/calibration"
 PLANS_DIR = "~/Developer/blenderTools/plans"
 
 # ------------------------------------------------------------------ gauge ----
-VERSION_STR = "0.7.0"
+VERSION_STR = "0.8.0"
 GAUGE_LOG = "~/Developer/blenderTools/ledger/gauge_log.jsonl"
 # Composite weights. Transparent on purpose: change these, and the composite
 # score means something different -- so log the weights with the score.

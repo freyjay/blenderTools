@@ -34,9 +34,11 @@ The ledger in `ledger/masterwork_ledger.md` records the failures as carefully as
 
 ```
 blendertools/
+  cast.py         the ONE casting policy: per-selection world-space BVH, depth-rebased
+                  origins, explicit 'selected' vs 'visible' semantics
   eye.py          text renders: id · edges · depth · shade  (arbitrary views, windows, AA)
   senses.py       proportions · contour_angles · turntable · render_hardness ·
-                  silhouette (sub-pixel, occlusion pass-through) · cavity_probe · occupancy_grid
+                  silhouette (sub-pixel) · cavity_probe + enclosure_check · occupancy_grid
   measure.py      guarded rulers (frame REQUIRED), edge_bisect with an enforced invariant,
                   parts_at_height / attribute_point for post-fusion diagnosis
   mesh_mind.py    part graph: continuity contracts, connectivity_check, island_census,
@@ -113,7 +115,7 @@ After editing any module: `bt.reload()`.
 
 ## Status
 
-**v0.7.0 — working, experimental, honest about its ceiling.** An independent audit of v0.6.0 reproduced twelve defects; all P1s are fixed with regression tests (see `AUDIT-RESPONSE.md`). Models are sphere-blockout plus voxel fusion; the topology gap (quad flow, subdivision-ready meshes) is the current frontier, and `recipes.quadriflow` is the first step. The calibration suite passes 16/16 (5 known-geometry cases, 10 regression tests from the external audit, and a scene-integrity assertion). The gauge system exists but has one baseline logged. The tooling grew inside one long collaborative session between a human teaching calibration the way an atelier teaches drawing and an agent building the instruments it was being taught to use — the ledger reads accordingly.
+**v0.8.0 — working, experimental, honest about its ceiling.** An independent audit of v0.6.0 reproduced twelve defects; all P1 and P2 findings are fixed with regression tests (see `AUDIT-RESPONSE.md`). Models are sphere-blockout plus voxel fusion; the topology gap (quad flow, subdivision-ready meshes) is the current frontier, and `recipes.quadriflow` is the first step. The calibration suite passes 20/20 (5 known-geometry cases, 14 regression tests from the external audit incl. occlusion policy, far-subject and transform/modifier checks, and a scene-integrity assertion with planted decoys). The gauge system exists but has one baseline logged. The tooling grew inside one long collaborative session between a human teaching calibration the way an atelier teaches drawing and an agent building the instruments it was being taught to use — the ledger reads accordingly.
 
 ## Credits
 

@@ -1,4 +1,4 @@
-# Audit response — v0.7.0 (Stage A)
+# Audit response — v0.8.0 (Stage A + Stage B)
 
 In reply to the external audit of commit `edc88e9` (v0.6.0). Every finding was
 reproducible as described; none is disputed. Each accepted finding now has a
@@ -13,8 +13,8 @@ Evidence for this release is the calibration report committed under
 | P1-3 | Second `voxel_fuse` inherited `hide_render=True` | **Fixed** | `audit_P1_3_refuse_render_visible` | Both visibility flags reset on copies and result, in `recipes` and `mesh_mind`. |
 | P1-4 | Unresolved `frame` silently measured the whole scene | **Fixed** | `audit_P1_4_bad_frame_rejected` | `senses._caster` and `eye.render_ascii` raise on missing/empty frames and report requested names. |
 | P1-5 | Gate fooled by log-before-compare; cross-model fallback; missing metrics inflated composite | **Fixed** | `audit_P1_5_gate_order` | Scorecards carry an `id`, weights, config hash and coverage. Baseline = same model, same config hash, same coverage, not self. No cross-model fallback. Missing components count as 0. Docs now say gate **before** log. |
-| P2-6 | `eye` and `senses` disagree on occlusion | **Stage B** | — | Unified casting policy via per-selection BVH. Listed under `not_verified` in every report until done. |
-| P2-7 | Ray origin from projected size; out-of-range height returned nearest row | **Half fixed** | `audit_P2_7_width_out_of_range` | Out-of-range now raises and `sampled_z` is returned. Depth-bounds ray origin is Stage B. |
+| P2-6 | `eye` and `senses` disagree on occlusion | **Fixed (Stage B)** | `audit_P2_6_occupancy_occlusion`, `audit_P2_6_policy_semantics` | New `cast.Caster`: per-selection world-space BVH trees from evaluated meshes; one policy for `eye` and `senses`, named explicitly (`selected` = full projection of selected objects, `visible` = first hit). No pass-through, no bounce cap. |
+| P2-7 | Ray origin from projected size; out-of-range height returned nearest row | **Fixed (Stage B)** | `audit_P2_7_width_out_of_range`, `audit_P2_7a_far_subject`, `stageB_transforms_and_modifiers` | Origins are rebased to the target's depth bounds along the ray; subjects at ±100 measure identically to those at the origin. Scale, rotation and modifier evaluation tested. `scanline` routed through the same policy. |
 | P2-8 | Contracts declared, not enforced; global clear; unused `collection` | **Fixed** | `audit_P2_8_fuse_contract` | `fuse_group` refuses non-fuse layers, validates members before mutating, refuses foreign-name collisions. `plan.build(clear_first)` removes only run-owned geometry; `collection` honored. |
 | P2-9 | AABB overlap presented as proof of connectivity | **Fixed (relabel)** | — | Docstring corrected; `overlap_candidates` alias added; `island_census` after fusion is the proof. |
 | P2-10 | Plan hash omitted voxel/profile | **Fixed** | in `plan` test (`hash_profile`, `verify_rejects_tamper`) | Hash covers build options; `build()` verifies before executing. |
@@ -29,7 +29,7 @@ Evidence for this release is the calibration report committed under
 - Factory-startup isolation: agreed for headless runs; inside a live session the suite now enforces run-owned ownership plus a pre/post identity assertion instead.
 - Composite score: agreed it is not the sole definition of improvement; `coverage` and per-component deltas are recorded so reviewers can weigh purpose.
 
-## Stage B (planned)
-Unified per-selection BVH casting for `eye` and `senses`; depth-bounds ray origins; translation/scale/parent/modifier tests; reference-registration manifests with uncertainty; Studio adapter via printed JSON.
+## Stage B (done in v0.8.0)
+Unified per-selection BVH casting; depth-bounds origins; translation/scale/modifier tests; decoy *collection* planted per your exact reproduction; `hide_set` guarded for multi-scene files; single version source. Still open: parented/animated transforms, reference-registration manifests with uncertainty, a Studio adapter via printed JSON.
 
 Thank you for the reproduction discipline. It found what the author's own suite could not, for the reason the author's suite could not: it tested the failure paths, not the demo path.

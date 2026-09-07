@@ -11,6 +11,7 @@ supersampling, cross-section slicer.
 
 import bpy
 from mathutils import Vector
+from . import cast as _cast
 
 _VIEWS = {
     "FRONT":  Vector((0, 1, 0)),
@@ -62,7 +63,7 @@ def _bounds(objs, right, up_s):
 
 
 def render_ascii(view="FRONT", width=72, height=None, mode="id",
-                 frame=None, aspect=0.5, aa=False, center=None, extent=None):
+                 frame=None, aspect=0.5, aa=False, center=None, extent=None, policy=None):
     """
     Orthographic character render of the scene.
 
@@ -101,12 +102,14 @@ def render_ascii(view="FRONT", width=72, height=None, mode="id",
 
     offs = [(-0.25, -0.25), (0.25, -0.25), (-0.25, 0.25), (0.25, 0.25)] if aa else [(0.0, 0.0)]
 
+    caster = _cast.Caster(objs if frame is not None else None, policy=policy)
+
     def cast(u, v):
-        origin = -forward * start + right * u + up_s * v
-        hit, loc, nrm, _i, obj, _m = scene.ray_cast(deps, origin, forward)
-        if not hit or (limit_names and obj.name not in limit_names):
+        h = caster.cast(right * u + up_s * v, forward)   # depth is rebased by the caster
+        if h is None:
             return None
-        return (letters.get(obj.name, "?"), (loc - origin).length, nrm)
+        loc, nrm, name, dist = h
+        return (letters.get(name, "?"), dist, nrm)
 
     du, dv = 2 * eu / width, 2 * ev / height
     grid = []
@@ -181,17 +184,17 @@ def render_ascii(view="FRONT", width=72, height=None, mode="id",
     return chr(10).join(parts + rows)
 
 
-def scanline(view="FRONT", axis_value=0.0, lo=-2.0, hi=2.0, step=0.1):
-    """1-D probe along the screen-up axis at horizontal position axis_value."""
+def scanline(view="FRONT", axis_value=0.0, lo=-2.0, hi=2.0, step=0.1, frame=None, policy=None):
+    """1-D probe along the screen-up axis at horizontal position axis_value.
+    Origins are depth-rebased by the Caster (Stage B)."""
+    if step <= 0:
+        raise ValueError("scanline: step must be > 0")
     forward, right, up_s = _basis(view)
-    deps = bpy.context.evaluated_depsgraph_get()
-    scene = bpy.context.scene
+    caster = _cast.Caster(_cast.resolve_frame(frame), policy=policy)
     out, v = [], lo
     while v <= hi + 1e-9:
-        origin = -forward * 50.0 + right * axis_value + up_s * v
-        hit, loc, _n, _i, obj, _m = scene.ray_cast(deps, origin, forward)
-        out.append((round(v, 3), obj.name if hit else None,
-                    round((loc - origin).length, 3) if hit else None))
+        h = caster.cast(right * axis_value + up_s * v, forward)
+        out.append((round(v, 3), h[2] if h else None, round(h[3], 3) if h else None))
         v += step
     return out
 

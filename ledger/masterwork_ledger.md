@@ -243,3 +243,10 @@ render-visible; gate cannot be fooled by log order; hashes cover build options;
 cavity depth is an estimate with an enclosure check, not a verdict. Doctrine 15
 and 16 added. The lesson under the twelve: test the failure paths. Stage B
 (unified casting, depth-bounds origins) tracked in not_verified.
+
+## v0.8.0 -- audit response, Stage B
+One casting policy (cast.Caster): eye and senses now agree about occlusion by
+construction; ray origins follow the subject's depth, so a head at y=-100
+measures like one at y=2. Suite 16 -> 20. Every P1 and P2 audit finding is now
+closed with a test. Open and stated: parented/animated transforms, reference
+manifests with uncertainty, Studio adapter.

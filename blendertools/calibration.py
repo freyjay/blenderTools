@@ -43,7 +43,11 @@ def _snapshot():
 def isolated_scene():
     before = _snapshot()
     for o in bpy.data.objects:
-        o.hide_set(True); o.hide_render = True
+        try:
+            o.hide_set(True)
+        except RuntimeError:      # object not in the active view layer (multi-scene files)
+            pass
+        o.hide_render = True
     integrity = {"ok": True, "problems": []}
     try:
         yield integrity
@@ -54,7 +58,11 @@ def isolated_scene():
             if o is None or o.as_pointer() != ptr:
                 integrity["problems"].append(f"pre-existing object lost or replaced: {name}")
                 continue
-            o.hide_set(hv); o.hide_render = hr; o.hide_viewport = hvp
+            try:
+                o.hide_set(hv)
+            except RuntimeError:
+                pass
+            o.hide_render = hr; o.hide_viewport = hvp
         after = _snapshot()
         extra = set(after) - set(before)
         if extra:
@@ -352,6 +360,62 @@ def test_public_imports():
     return {"pass": all(v == "ok" for v in checks.values()), "checks": checks}
 
 
+# ======================================================== Stage B tests ====
+def test_occupancy_occlusion():
+    """P2-6: an unselected blocker in front must not change selected-frame occupancy,
+    and occupancy must agree with silhouette about the same scene."""
+    from . import senses
+    bpy.ops.mesh.primitive_torus_add(major_radius=1, minor_radius=0.3, location=(0, 2, 0), rotation=(math.pi / 2, 0, 0))
+    t = _adopt("occ_t")
+    n0 = sum(sum(r) for r in senses.occupancy_grid(n=16, frame=[t.name])["grid"])
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.6, location=(1.0, 0.4, 0))
+    _adopt("occ_blocker")
+    n1 = sum(sum(r) for r in senses.occupancy_grid(n=16, frame=[t.name])["grid"])
+    return {"pass": n0 > 0 and n0 == n1, "cells_before": n0, "cells_after_blocker": n1}
+
+
+def test_policy_semantics():
+    """'selected' ignores occluders; 'visible' counts them. Both must be explicit."""
+    from . import eye
+    bpy.ops.mesh.primitive_torus_add(major_radius=1, minor_radius=0.3, location=(0, 2, 0), rotation=(math.pi / 2, 0, 0))
+    t = _adopt("pol_t")
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.6, location=(1.0, 0.4, 0))
+    _adopt("pol_blocker")
+    def cells(policy):
+        g = eye.render_ascii(view="FRONT", width=16, height=16, mode="id", frame=[t.name], policy=policy)
+        return sum(1 for ch in "".join(g.split(chr(10))[2:]) if ch != " ")
+    sel, vis = cells("selected"), cells("visible")
+    return {"pass": sel > vis > 0, "selected_cells": sel, "visible_cells": vis}
+
+
+def test_far_subject():
+    """P2-7a: subjects far from the origin measure exactly like near ones."""
+    from . import senses
+    out = {}
+    for label, loc, view in (("front_far_neg", (0, -100, 0), "FRONT"), ("front_far_pos", (0, 100, 0), "FRONT"),
+                              ("right_far", (100, 3, 0), "RIGHT"), ("top_far", (0, 0, -100), "TOP")):
+        c = _cube("far", loc)
+        p = senses.proportions(view, frame=[c.name], rows=24)
+        out[label] = round(p["W"], 3)
+        _OWNED.remove(c); bpy.data.objects.remove(c, do_unlink=True)
+    return {"pass": all(abs(w - 2.0) < 0.05 for w in out.values()), "widths": out}
+
+
+def test_transforms_and_modifiers():
+    """Scale, rotation and modifiers must be reflected (evaluated world-space BVH)."""
+    from . import senses
+    out = {}
+    c = _cube("sc", (0, 2, 0)); c.scale = (3, 1, 1)
+    out["scaled_w"] = round(senses.proportions("FRONT", frame=[c.name], rows=24)["W"], 3)
+    c.scale = (1, 1, 1); c.rotation_euler = (0, 0, math.radians(45))
+    out["rotated_w"] = round(senses.proportions("FRONT", frame=[c.name], rows=24)["W"], 3)
+    c.rotation_euler = (0, 0, 0)
+    mod = c.modifiers.new("arr", "ARRAY"); mod.count = 2; mod.relative_offset_displace = (1.0, 0, 0)
+    out["array_w"] = round(senses.proportions("FRONT", frame=[c.name], rows=24)["W"], 3)
+    ok = abs(out["scaled_w"] - 6.0) < 0.1 and abs(out["rotated_w"] - 2 * math.sqrt(2)) < 0.1 and abs(out["array_w"] - 4.0) < 0.1
+    return {"pass": ok, "measured": out, "expected": {"scaled_w": 6.0, "rotated_w": round(2 * math.sqrt(2), 3), "array_w": 4.0}}
+
+
 # ======================================================================= run ====
 CALIBRATION = (("bisect_guard", test_bisect_guard), ("torus", test_torus), ("pyramid", test_pyramid),
                ("occlusion", test_occlusion), ("plan", test_plan))
@@ -364,7 +428,11 @@ REGRESSION = (("audit_P1_2_public_imports", test_public_imports),
               ("audit_P2_11_iou_shape", test_iou_shape_mismatch),
               ("audit_P2_11_cross_section", test_cross_section_truncation),
               ("audit_P2_12_cavity_plane", test_cavity_plane_not_enclosed),
-              ("audit_hardening_turntable_guard", test_turntable_guard))
+              ("audit_hardening_turntable_guard", test_turntable_guard),
+              ("audit_P2_6_occupancy_occlusion", test_occupancy_occlusion),
+              ("audit_P2_6_policy_semantics", test_policy_semantics),
+              ("audit_P2_7a_far_subject", test_far_subject),
+              ("stageB_transforms_and_modifiers", test_transforms_and_modifiers))
 
 
 def run_all(write_report=True):
@@ -373,11 +441,16 @@ def run_all(write_report=True):
     no longer deletes a user's objects by name."""
     import json, os, platform, time
     results = {}
-    decoys = []
+    decoys, decoy_coll = [], None
     for name in ("bc_p_a", "bc_calibration_decoy"):
         if name not in bpy.data.objects:
             bpy.ops.mesh.primitive_cube_add(size=0.5, location=(9, 9, 9))
             d = bpy.context.active_object; d.name = name; decoys.append(d)
+    # the audit's exact reproduction: a pre-existing COLLECTION named like the old convention
+    if "bc_calibration" not in bpy.data.collections and decoys:
+        decoy_coll = bpy.data.collections.new("bc_calibration")
+        bpy.context.scene.collection.children.link(decoy_coll)
+        decoy_coll.objects.link(decoys[0])
     dec_ptrs = {d.name: d.as_pointer() for d in decoys}
     with isolated_scene() as integrity:
         for name, fn in CALIBRATION + REGRESSION:
@@ -387,10 +460,14 @@ def run_all(write_report=True):
                 results[name] = {"pass": False, "error": f"{type(e).__name__}: {e}"}
             _cleanup()
     decoy_ok = all(bpy.data.objects.get(n) is not None and bpy.data.objects[n].as_pointer() == p for n, p in dec_ptrs.items())
+    if decoy_coll is not None:
+        decoy_ok = decoy_ok and bpy.data.collections.get("bc_calibration") is not None and decoys[0].name in decoy_coll.objects
     results["audit_P1_1_scene_integrity"] = {"pass": integrity["ok"] and decoy_ok,
                                              "problems": integrity["problems"], "decoys_survived": decoy_ok}
     for d in decoys:
         bpy.data.objects.remove(d, do_unlink=True)
+    if decoy_coll is not None:
+        bpy.data.collections.remove(decoy_coll)
     passed = all(v.get("pass") for v in results.values())
     out = {"passed": passed, "run_id": _RUN,
            "n_tests": len(results), "n_passed": sum(1 for v in results.values() if v.get("pass")),
@@ -400,8 +477,8 @@ def run_all(write_report=True):
                         "headless": bpy.app.background, "ts": time.strftime("%Y-%m-%dT%H:%M:%S")},
            "not_verified": ["live-scene measurement on a real model (this suite uses known primitives)",
                             "reference fidelity (see gauge.scorecard)",
-                            "occupancy-vs-silhouette casting policy unification (Stage B, audit P2-6)",
-                            "depth-bounds ray origins for far-from-origin subjects (Stage B, audit P2-7a)"]}
+                            "parented / animated transforms (only scale, rotation and one modifier are tested)",
+                            "measure.owner_at uses the 'visible' policy by design; not exercised here"]}
     if write_report:
         d = os.path.expanduser(config.CALIBRATION_REPORT_DIR)
         os.makedirs(d, exist_ok=True)
