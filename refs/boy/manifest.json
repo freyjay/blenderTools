@@ -94,5 +94,9 @@
     }
   },
   "post_processing": "interior holes filled at grid level (flood fill from the border); silhouettes are outline-only by definition",
-  "finding": "reference eye_center_span_over_W = 0.387; canon default was 0.43; boy_v3 measured 0.389 and was penalized for matching the reference. Use reference-derived ratios, never canon."
+  "finding": "reference eye_center_span_over_W = 0.387; canon default was 0.43; boy_v3 measured 0.389 and was penalized for matching the reference. Use reference-derived ratios, never canon.",
+  "corrections_2026_09_07": {
+    "profile_handedness": "boy_right.jpg is the MODEL'S LEFT profile in blendertools' basis (camera at -X; face toward -Y). Compare with view='LEFT'. Mirrored comparison drops IoU 0.97 -> 0.66.",
+    "window_rule": "square window = max(bbox half-width, half-height) x 1.03. senses.occupancy_grid auto-fit pads each axis separately (non-square); pass center/extent explicitly with extent=(e,e). The mismatch read a correct hull at 0.70 before this was found."
+  }
 }

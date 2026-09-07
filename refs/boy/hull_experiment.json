@@ -1,0 +1,68 @@
+{
+  "date": "2026-09-07",
+  "question": "can the registered references themselves supply the base mesh, without a generator?",
+  "method": {
+    "hull": "visual hull = intersection of solidified front and profile silhouette slabs (exact boolean), remesh 0.02, smooth 0.5x4",
+    "ehull": "elliptical hull: per z-slice, each (front-run x profile-run) rectangle replaced by its inscribed ellipse (superellipse p=2); silhouettes preserved by construction, volume rounded"
+  },
+  "ruler": "square bbox-normalized window; FRONT vs boy_front; LEFT vs boy_right (model's left); BACK swept -90..90 deg vs boy_back34 (camera azimuth unknown -> best fit per model, same optimism for all)",
+  "results": {
+    "v1": {
+      "front_32": 0.684,
+      "front_64": 0.682,
+      "profile_32": 0.659,
+      "profile_64": 0.658,
+      "top_fill": 0.579
+    },
+    "v2": {
+      "front_32": 0.704,
+      "front_64": 0.701,
+      "profile_32": 0.66,
+      "profile_64": 0.666,
+      "back34_best": 0.739,
+      "back34_best_az": -75,
+      "top_fill": 0.55
+    },
+    "v3": {
+      "front_32": 0.661,
+      "front_64": 0.652,
+      "profile_32": 0.65,
+      "profile_64": 0.654,
+      "back34_best": 0.711,
+      "back34_best_az": -75,
+      "top_fill": 0.675
+    },
+    "hull": {
+      "front_32": 0.988,
+      "front_64": 0.964,
+      "profile_32": 0.974,
+      "profile_64": 0.965,
+      "back34_best": 0.826,
+      "back34_best_az": 0,
+      "back34_at_45": 0.658,
+      "top_fill": 0.975,
+      "islands": 3
+    },
+    "ehull": {
+      "front_32": 0.976,
+      "front_64": 0.952,
+      "profile_32": 0.955,
+      "profile_64": 0.946,
+      "back34_best": 0.847,
+      "back34_plateau": "0.83-0.85 over -45..-15",
+      "top_fill": 0.776,
+      "islands": 9,
+      "volume_vs_hull": 0.79
+    }
+  },
+  "insights": [
+    "hand blockouts sit at 0.65-0.70 on honest reference rulers; the earlier 0.82-0.84 was a non-square window artifact",
+    "a two-view hull matches both source views at the noise floor by construction, but is a box in depth (top fill 0.975 vs ~0.78 for a round head) and loses 0.13 IoU at three-quarter angles",
+    "replacing each cross-section rectangle with its inscribed ellipse preserves both silhouettes and rounds the volume (top fill 0.776 = pi/4); the third, unseen view improves from 0.66-0.71 to a 0.85 plateau",
+    "no API, deterministic, provenance = the reference images; runs in ~2 s",
+    "open: meshing fragments thin regions (9 islands) -- a point-to-volume parameter problem, not geometry; concavities (eye sockets) and colour-separated hair/skin layers not yet attempted; the back-3/4 azimuth is best-fit, not known"
+  ],
+  "files": {
+    "blend": "/Users/francisrey/Developer/blender-connect-experiment/boy_hull.blend (objects boy_hull, boy_ehull)"
+  }
+}

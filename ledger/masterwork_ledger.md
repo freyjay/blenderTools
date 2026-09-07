@@ -292,3 +292,17 @@ a false stripe from the vignette and was dropped; final rule sat > 0.045 or lum 
 0.60). Silhouette grids n=32/64, bbox-normalized, holes filled. Finding: the
 reference's eye span is 0.387 of W; canon said 0.43; v3 measured 0.389 and was
 penalized for being right. Reference-derived ratios from here on.
+
+
+## 2026-09-07 -- the references as material: visual hull test
+Question: can the registered references supply the base mesh without a generator?
+On honest square-window rulers the hand blockouts read 0.65-0.70 (the old 0.84 was a
+non-square-window artifact). A two-view visual hull matches front and profile at the
+noise floor by construction but is a box in depth (top fill 0.975) and loses 0.13 at
+three-quarter angles. Replacing each cross-section rectangle with its inscribed
+ellipse keeps both silhouettes and rounds the volume (top fill 0.776 = pi/4); on the
+unseen back-3/4 reference it plateaus at 0.85 vs 0.66-0.71 for the plain hull and
+0.71-0.74 for the blockouts. Deterministic, free, provenance = the images, ~2 s.
+Two instrument lessons on the way: the profile image is the model's LEFT view
+(mirror test 0.97 vs 0.66), and 'bbox-normalized' must say square vs per-axis.
+Open: thin-region meshing (9 islands), concavities, hair/skin colour layers.
