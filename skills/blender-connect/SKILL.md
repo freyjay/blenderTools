@@ -113,3 +113,10 @@ case studies behind every doctrine line.
     parameters, output hash), then measured against the reference at fixed
     registration, corrected as plan edits, gated. The gauge does not care where a
     mesh came from; it asks the same question of all of them.
+18. One object, all views. Every reference view is a projection of the SAME shape,
+    so (a) references must agree with each other before they are trusted (shared
+    landmarks at the same heights; per-height width and depth jointly plausible);
+    (b) a candidate is scored as a VECTOR of per-view residuals -- silhouette, curve
+    features, interior landmarks -- and passes only if every view passes; a mean
+    hides a wrong object; (c) corrections are made to the object and ALL views are
+    re-measured. Fitting views one at a time is how v3 regressed from v2.

@@ -89,6 +89,9 @@ Status marks: `[x]` built and tested · `[~]` built, never executed · `[!]` bui
 - [ ] Fresh-agent test: new session, `START-HERE.md` only, no help — *you*
 - [ ] Housekeeping: dedupe `INSTALL.md`; archive `freyjay/blender_connect`; private repo for `internal/` — *you*
 
+## One object, all views — 2026-09-07 (doctrine 18)
+The job, given the views, is to compute the single shape all of them agree on: references checked against each other first; candidates scored as a per-view residual vector (every view must pass); corrections made to the object and every view re-measured. The visual hull is the purest form (the largest shape consistent with all silhouettes); the ellipse chooses among consistent shapes; the curve spec adds sharpness agreement.
+
 ## Curves before renders — 2026-09-07
 The hull test produced good silhouette numbers and a render that looked like melted ice cream: silhouette IoU is outline-only and cannot see softness. New rule (from the human): learn the reference's curves first — how soft, how sharp, what angle, where — and require the model's views to agree with the reference and with each other **before** anything is rendered. `refs/boy/curves.json` holds the boy's curve spec (crest spike 100–138°, pod scallop −55..−99°, hairline notch at z 0.35, brow +49° at 0.48, nose tip +55..+72° at 0.69, neck minimum at 0.894 in both views). Instrument finding: curvature means at 128 px are pixel-noise dominated; use ≥512-px outlines and compare feature lists, not means.
 
